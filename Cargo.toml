@@ -1,12 +1,10 @@
 [package]
-name    = "wcdemengine"
+name    = "wdem-tracker"
 version = "0.1.0"
 authors = ["Weird Constructor <weirdconstructor@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-palette            = "0.2"
-chrono             = "0.4.6"
 wlambda            = { path = "../wlambda" }
 ggez               = "0.5.1"
 vecmath            = "1.0.0"
@@ -19,10 +17,3 @@ mint               = "0.5.1"
 #features=["ttf","bundled","gfx"]
 ##,"image","gfx","ttf"]
 ##,"mixer"]
-
-[profile.release]
-panic         = "abort"
-lto           = true
-codegen-units = 1
-incremental   = false
-opt-level     = "z"
