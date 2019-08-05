@@ -1,7 +1,14 @@
-<img align="left" width="60" height="60" src="http://m8geil.de/data/git/wlambda/res/wlambda_logo_60.png">
-
-WCDemEngine - 2D Demo Engine written in Rust, using WLambda Scripting
+WDemTracker - A music tracker which uses wave-sickle as audio Backend
 =====================================================================
+
+This is a crate that provides an editor and tracker backend for use in other
+applications. The editor currently uses ggez for graphics and input handling,
+but could be rather easily ported to SDL or other graphics libraries.
+
+The WLambda scripting language provides means to setup signal flow
+graphs and setting up the wave-sickle synthesizer modules.
+
+The main user is currently my wctr-demo-engine project.
 
 # License
 
