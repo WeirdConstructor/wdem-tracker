@@ -1,3 +1,6 @@
+use std::rc::Rc;
+use std::cell::RefCell;
+
 pub struct Tracker {
     /// beats per minute
     bpm:            usize,
@@ -19,8 +22,8 @@ impl Tracker {
     }
 }
 
-pub struct TrackerEditor<'a> {
-    tracker:        &'a mut Tracker,
+pub struct TrackerEditor {
+    tracker:        Rc<RefCell<Tracker>>,
     cur_track_idx:  usize,
     cur_input_nr:   String,
     cur_row_idx:    usize,
@@ -28,18 +31,17 @@ pub struct TrackerEditor<'a> {
 }
 
 pub enum TrackerInput {
-    KeyEsc,
-    KeyEnter,
-    KeyNum(u8),
-    KeyDot,
-    KeyStep,
-    KeyLerp,
-    KeySStep,
-    KeyExp,
-    KeyDown,
-    KeyUp,
-    KeyLeft,
-    KeyRight,
+    Escape,
+    Enter,
+    Character(char),
+    SetInterpStep,
+    SetInterpLerp,
+    SetInterpSStep,
+    SetInterpExp,
+    RowDown,
+    RowUp,
+    TrackLeft,
+    TrackRight,
 }
 
 pub trait TrackerEditorView {
@@ -54,10 +56,10 @@ pub trait TrackerEditorView {
     fn end_drawing(&mut self);
 }
 
-impl<'a> TrackerEditor<'a> {
-    pub fn new(trk: &'a mut Tracker) -> Self {
+impl TrackerEditor {
+    pub fn new(tracker: Rc<RefCell<Tracker>>) -> Self {
         TrackerEditor {
-            tracker:       trk,
+            tracker,
             cur_track_idx: 0,
             cur_input_nr:  String::from(""),
             cur_row_idx:   0,
@@ -65,16 +67,20 @@ impl<'a> TrackerEditor<'a> {
         }
     }
 
-    pub fn show_state<T>(&mut self, view: &mut T) where T: TrackerEditorView {
+    pub fn show_state<T>(&mut self, max_rows: usize, view: &mut T) where T: TrackerEditorView {
         if !self.redraw_flag { return; }
         self.redraw_flag = false;
 
         view.start_drawing();
-        for (track_idx, track) in self.tracker.tracks.iter().enumerate() {
+        for (track_idx, track) in self.tracker.borrow().tracks.iter().enumerate() {
 
             let mut track_row_pointer = 0;
 
-            for row_idx in 0..self.tracker.rows {
+            let mut rows_shown_count = 0;
+            for row_idx in 0..self.tracker.borrow().rows {
+                if rows_shown_count > max_rows {
+                    break;
+                }
 
                 let cursor_is_here =
                         self.cur_row_idx   == row_idx
@@ -87,13 +93,15 @@ impl<'a> TrackerEditor<'a> {
                         row_idx, track_idx, cursor_is_here,
                         Some(track.data[track_row_pointer].1),
                         track.data[track_row_pointer].2);
+
+                    track_row_pointer += 1;
                 } else {
                     view.draw_track_cell(
                         row_idx, track_idx, cursor_is_here,
                         None, Interpolation::Empty);
                 }
 
-                track_row_pointer += 1;
+                rows_shown_count += 1;
             }
         }
         view.end_drawing();
@@ -101,41 +109,45 @@ impl<'a> TrackerEditor<'a> {
 
     pub fn process_input(&mut self, input: TrackerInput) {
         match input {
-            TrackerInput::KeyEsc => {
+            TrackerInput::Escape => {
                 self.cur_input_nr = String::from("");
             },
-            TrackerInput::KeyEnter => {
+            TrackerInput::Enter => {
                 // parse self.cur_input_nr to float and enter into current row.
             },
-            TrackerInput::KeyNum(n) => {
-                self.cur_input_nr += &n.to_string();
+            TrackerInput::Character(c) => {
+                match c {
+                    '0'..='9' => {
+                        self.cur_input_nr += &c.to_string();
+                    },
+                    '.' => {
+                        self.cur_input_nr += &c.to_string();
+                    },
+                    _ => (),
+                }
             },
-            TrackerInput::KeyDot => {
-                // if dot in cur_input_nr ignore
-                // else add dot
-            },
-            TrackerInput::KeyDown => {
+            TrackerInput::RowDown => {
                 // row idx += 1
             },
-            TrackerInput::KeyUp => {
+            TrackerInput::RowUp => {
                 // row idx -= 1
             },
-            TrackerInput::KeyRight => {
+            TrackerInput::TrackLeft => {
                 // track idx += 1
             },
-            TrackerInput::KeyLeft => {
+            TrackerInput::TrackRight => {
                 // track idx -= 1
             },
-            TrackerInput::KeyStep => {
+            TrackerInput::SetInterpStep => {
                 // set interp mode of cur row to *
             },
-            TrackerInput::KeyLerp => {
+            TrackerInput::SetInterpLerp => {
                 // set interp mode of cur row to *
             },
-            TrackerInput::KeySStep => {
+            TrackerInput::SetInterpSStep => {
                 // set interp mode of cur row to *
             },
-            TrackerInput::KeyExp => {
+            TrackerInput::SetInterpExp => {
                 // set interp mode of cur row to *
             },
         }

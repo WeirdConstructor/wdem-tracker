@@ -1,3 +1,8 @@
+use std::rc::Rc;
+use std::cell::RefCell;
+mod tracker;
+use tracker::*;
+
 /*
 
 modules:
@@ -9,19 +14,18 @@ Frontend
     rendering
     undo/redo
 
-Piece trait
+Piece struct
     provides file save/loading
     track parameter setting (lpb, ticks, ...)
     song length
 
-Track trait
+Track struct
     track name
     track type (note vs. automation)
     provides saving/loading
     provides undo/redo
 
 Backend trait
-    data storage
     feedback of play position
     signal data output
 
@@ -44,50 +48,46 @@ Backend trait
 */
 
 use ggez::{Context, ContextBuilder, GameResult};
-use ggez::event::{self, EventHandler};
+use ggez::event::{self, EventHandler, quit};
 use ggez::graphics;
+use ggez::input::keyboard::{KeyCode, KeyMods};
 
+struct Painter<'a> {
+    ctx: &'a mut Context,
+    reg_view_font: &'a graphics::Font,
+    cur_reg_line: usize,
+}
 
-//struct Painter<'a> {
-//    ctx: &'a mut Context,
-//    reg_view_font: &'a graphics::Font,
-//    cur_reg_line: usize,
-//}
-//
-//impl<'a> Painter<'a> {
-//    fn draw_rect(&mut self, color: [f32; 4], rot: ShapeRotation, pos: [f32; 2], size: [f32; 2], filled: bool, thickness: f32) {
-//        let rot = match rot {
-//            ShapeRotation::Center(a) => a,
-//            _ => 0.0,
-//        };
-//        let r =
-//            graphics::Mesh::new_rectangle(
-//                self.ctx,
-//                if filled {
-//                    graphics::DrawMode::fill()
-//                } else {
-//                    graphics::DrawMode::stroke(thickness)
-//                },
-//                graphics::Rect::new(-size[0] / 2.0, -size[1] / 2.0, size[0], size[1]),
-//                graphics::Color::from(color)).unwrap();
-//        graphics::draw(
-//            self.ctx,
-//            &r,
-//            ([pos[0], pos[1]],
-//             rot,
-//             [0.0, 0.0],
-//             graphics::WHITE)).unwrap();
-//    }
-//
-//    fn draw_text(&mut self, pos: [f32; 2], size: f32, text: String) {
-//        let txt =
-//            graphics::Text::new((text, *self.reg_view_font, size));
-//        graphics::draw(
-//            self.ctx, &txt,
-//            (pos, 0.0, [0.0, 0.0], graphics::WHITE)).unwrap();
-//    }
-//}
-//
+impl<'a> Painter<'a> {
+    fn draw_rect(&mut self, color: [f32; 4], pos: [f32; 2], size: [f32; 2], filled: bool, thickness: f32) {
+        let r =
+            graphics::Mesh::new_rectangle(
+                self.ctx,
+                if filled {
+                    graphics::DrawMode::fill()
+                } else {
+                    graphics::DrawMode::stroke(thickness)
+                },
+                graphics::Rect::new(-size[0] / 2.0, -size[1] / 2.0, size[0], size[1]),
+                graphics::Color::from(color)).unwrap();
+        graphics::draw(
+            self.ctx,
+            &r,
+            ([pos[0], pos[1]],
+             0.0,
+             [0.0, 0.0],
+             graphics::WHITE)).unwrap();
+    }
+
+    fn draw_text(&mut self, pos: [f32; 2], size: f32, text: String) {
+        let txt =
+            graphics::Text::new((text, *self.reg_view_font, size));
+        graphics::draw(
+            self.ctx, &txt,
+            (pos, 0.0, [0.0, 0.0], graphics::WHITE)).unwrap();
+    }
+}
+
 //impl<'a> signals::RegisterView for Painter<'a> {
 //    fn start_print_registers(&mut self) {
 //        self.cur_reg_line = 0;
@@ -110,19 +110,57 @@ use ggez::graphics;
 //}
 
 struct WDemTrackerGUI {
-    font: graphics::Font,
+    font:    graphics::Font,
+    tracker: Rc<RefCell<Tracker>>,
+    editor:  TrackerEditor,
 }
 
 impl WDemTrackerGUI {
     pub fn new(ctx: &mut Context) -> WDemTrackerGUI {
         let font = graphics::Font::new(ctx, "/DejaVuSansMono.ttf").unwrap();
-        WDemTrackerGUI { font, }
+        let trk = Rc::new(RefCell::new(Tracker::new()));
+        WDemTrackerGUI {
+            font,
+            tracker: trk.clone(),
+            editor: TrackerEditor::new(trk),
+        }
+    }
+}
+
+fn to_tracker_editor_input(keycode: KeyCode) -> Option<TrackerInput> {
+    match keycode {
+        KeyCode::Escape => Some(TrackerInput::Escape),
+//        KeyCode::Key0   => Some(TrackerInput::Digit(0)),
+//        KeyCode::Key1   => Some(TrackerInput::Digit(1)),
+//        KeyCode::Key2   => Some(TrackerInput::Digit(2)),
+//        KeyCode::Key3   => Some(TrackerInput::Digit(3)),
+//        KeyCode::Key4   => Some(TrackerInput::Digit(4)),
+//        KeyCode::Key5   => Some(TrackerInput::Digit(5)),
+//        KeyCode::Key6   => Some(TrackerInput::Digit(6)),
+//        KeyCode::Key7   => Some(TrackerInput::Digit(7)),
+//        KeyCode::Key8   => Some(TrackerInput::Digit(8)),
+//        KeyCode::Key9   => Some(TrackerInput::Digit(9)),
+//        KeyCode::
+        _ => None,
     }
 }
 
 impl EventHandler for WDemTrackerGUI {
     fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
         Ok(())
+    }
+
+    fn key_down_event(&mut self, ctx: &mut Context, keycode: KeyCode, _keymods: KeyMods, _repeat: bool) {
+        if keycode == KeyCode::Q {
+            quit(ctx);
+        } else {
+            println!("KEY: {:?}", keycode);
+        }
+    }
+
+    fn text_input_event(&mut self, _ctx: &mut Context, character: char) {
+        println!("CHR: {:?}", character);
+        self.editor.process_input(TrackerInput::Character(character));
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
