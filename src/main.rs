@@ -61,6 +61,7 @@ struct Painter<'a> {
     reg_view_font: &'a graphics::Font,
     cur_reg_line: usize,
     tvc: TrackerViewContext,
+    play_pos_row: usize,
 }
 
 impl<'a> Painter<'a> {
@@ -84,18 +85,20 @@ impl<'a> Painter<'a> {
              graphics::WHITE)).unwrap();
     }
 
-    fn draw_text(&mut self, pos: [f32; 2], size: f32, text: String) {
+    fn draw_text(&mut self, color: [f32; 4], pos: [f32; 2], size: f32, text: String) {
         let txt =
             graphics::Text::new((text, *self.reg_view_font, size));
         graphics::draw(
             self.ctx, &txt,
-            (pos, 0.0, [0.0, 0.0], graphics::WHITE)).unwrap();
+            (pos, 0.0, [0.0, 0.0], color.into())).unwrap();
     }
 }
 
-const TRACK_WIDTH: f32 = 30.0;
-const TRACK_PAD: f32 = 4.0;
-const ROW_HEIGHT: f32 = 20.0;
+const TPOS_PAD      : f32 = 50.0;
+const TRACK_WIDTH   : f32 = 46.0;
+const TRACK_PAD     : f32 =  0.0;
+const TRACK_VAL_PAD : f32 =  4.0;
+const ROW_HEIGHT    : f32 = 18.0;
 
 impl<'a> TrackerEditorView for Painter<'a> {
     fn start_drawing(&mut self) {
@@ -112,7 +115,7 @@ impl<'a> TrackerEditorView for Painter<'a> {
 
         self.draw_rect(
             clr,
-            [track_idx as f32 * (TRACK_WIDTH + TRACK_PAD), 0.0],
+            [TPOS_PAD + track_idx as f32 * (TRACK_WIDTH + TRACK_PAD), 0.0],
             [TRACK_WIDTH, (10.0 + 1.0) * ROW_HEIGHT],
             false,
             0.5);
@@ -126,17 +129,56 @@ impl<'a> TrackerEditorView for Painter<'a> {
         interp: Interpolation) {
 
         let s = if let Some(v) = value {
-            format!("{}", v)
+            format!("{:>03.2}", v)
         } else {
-            String::from("---")
+            String::from(" ---")
         };
 
-        self.draw_text(
-            [(track_idx as f32 * (TRACK_WIDTH + TRACK_PAD))
-             + TRACK_PAD / 2.0,
-             row_idx   as f32 * ROW_HEIGHT],
-            ROW_HEIGHT * 0.7,
-            s);
+        let txt_x =
+            TRACK_VAL_PAD
+            + TPOS_PAD
+            + track_idx as f32 * (TRACK_WIDTH + TRACK_PAD);
+
+        let txt_y = row_idx as f32 * ROW_HEIGHT;
+
+        if track_idx == 0 {
+            if row_idx == self.play_pos_row {
+                self.draw_rect(
+                    [0.4, 0.0, 0.0, 1.0],
+                    [0.0, txt_y],
+                    [800.0, ROW_HEIGHT],
+                    true,
+                    0.0);
+            }
+
+            self.draw_text(
+                [0.6, 0.6, 0.6, 1.0],
+                [TRACK_PAD / 2.0, row_idx as f32 * ROW_HEIGHT],
+                ROW_HEIGHT * 0.6,
+                format!("[{:0>4}]", row_idx));
+        }
+
+        if cursor {
+            self.draw_rect(
+                [0.4, 0.8, 0.4, 1.0],
+                [txt_x - TRACK_VAL_PAD + 1.0, txt_y + 1.0],
+                [TRACK_WIDTH - 2.0, ROW_HEIGHT - 2.0],
+                true,
+                0.5);
+
+            self.draw_text(
+                [0.0, 0.0, 0.0, 1.0],
+                [txt_x, txt_y],
+                ROW_HEIGHT * 0.9,
+                s);
+        } else {
+
+            self.draw_text(
+                [0.8, 0.8, 0.8, 1.0],
+                [txt_x, txt_y],
+                ROW_HEIGHT * 0.9,
+                s);
+        }
     }
 
     fn end_drawing(&mut self) {
@@ -256,6 +298,7 @@ impl EventHandler for WDemTrackerGUI {
             cur_reg_line: 0,
             tvc: TrackerViewContext {
             },
+            play_pos_row: 0,
         };
 
         self.editor.show_state(10, &mut p);
