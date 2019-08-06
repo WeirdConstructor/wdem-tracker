@@ -20,6 +20,14 @@ impl Tracker {
             tracks: Vec::new(),
         }
     }
+
+    pub fn add_track(&mut self, name: &str, data: Vec<(usize, f32, Interpolation)>) {
+        self.tracks.push(Track {
+            name: String::from(name),
+            last_idx: 0,
+            data,
+        });
+    }
 }
 
 pub struct TrackerEditor {
@@ -46,6 +54,7 @@ pub enum TrackerInput {
 
 pub trait TrackerEditorView {
     fn start_drawing(&mut self);
+    fn start_track(&mut self, track_idx: usize, name: &str, cursor: bool);
     fn draw_track_cell(
         &mut self,
         row_idx: usize,
@@ -53,6 +62,7 @@ pub trait TrackerEditorView {
         cursor: bool,
         value: Option<f32>,
         interp: Interpolation);
+    fn end_track(&mut self);
     fn end_drawing(&mut self);
 }
 
@@ -68,11 +78,13 @@ impl TrackerEditor {
     }
 
     pub fn show_state<T>(&mut self, max_rows: usize, view: &mut T) where T: TrackerEditorView {
-        if !self.redraw_flag { return; }
-        self.redraw_flag = false;
+//        if !self.redraw_flag { return; }
+//        self.redraw_flag = false;
 
+        let mut cc = 0;
         view.start_drawing();
         for (track_idx, track) in self.tracker.borrow().tracks.iter().enumerate() {
+            view.start_track(track_idx, &track.name, self.cur_track_idx == track_idx);
 
             let mut track_row_pointer = 0;
 
@@ -86,9 +98,10 @@ impl TrackerEditor {
                         self.cur_row_idx   == row_idx
                      && self.cur_track_idx == track_idx;
 
-                if    track_row_pointer <= track.data.len()
+                if    track_row_pointer < track.data.len()
                    && track.data[track_row_pointer].0 == row_idx {
 
+                    cc += 1;
                     view.draw_track_cell(
                         row_idx, track_idx, cursor_is_here,
                         Some(track.data[track_row_pointer].1),
@@ -96,6 +109,7 @@ impl TrackerEditor {
 
                     track_row_pointer += 1;
                 } else {
+                    cc += 1;
                     view.draw_track_cell(
                         row_idx, track_idx, cursor_is_here,
                         None, Interpolation::Empty);
@@ -103,6 +117,8 @@ impl TrackerEditor {
 
                 rows_shown_count += 1;
             }
+
+            view.end_track();
         }
         view.end_drawing();
     }

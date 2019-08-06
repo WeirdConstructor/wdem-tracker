@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 wlambda            = { path = "../wlambda" }
+wave-sickle        = { path = "../wave-sickle" }
 ggez               = "0.5.1"
 vecmath            = "1.0.0"
 nalgebra           = "0.18.0"
