@@ -245,8 +245,8 @@ impl WDemTrackerGUI {
             self.tracker.borrow_mut().add_track(
                 &format!("xxx{}", i),
                 vec![
-                    (0, 1.0, Interpolation::Step),
-                    (4, 4.0, Interpolation::Step),
+                    (0, 1.0, Interpolation::Lerp),
+                    (4, 4.0, Interpolation::Lerp),
                     (5, 0.2, Interpolation::Lerp),
                 ]);
         }
@@ -273,6 +273,9 @@ impl EventHandler for WDemTrackerGUI {
             quit(ctx);
         } else {
             match keycode {
+                KeyCode::X => {
+                    self.editor.process_input(TrackerInput::Delete);
+                },
                 KeyCode::H => {
                     self.editor.process_input(TrackerInput::TrackLeft);
                 },
@@ -317,7 +320,7 @@ impl EventHandler for WDemTrackerGUI {
         let mut ov = OutputValues { values: Vec::new() };
 
         self.editor.tracker.borrow_mut().tick(&mut ov);
-//        println!("OUT: {:?}", ov.values);
+        //d// println!("OUT: {:?}", ov.values);
 
         self.force_redraw = true;
         if self.force_redraw || self.editor.need_redraw() {

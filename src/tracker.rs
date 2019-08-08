@@ -37,7 +37,8 @@ impl Tracker {
     pub fn add_track(&mut self, name: &str, data: Vec<(usize, f32, Interpolation)>) {
         self.tracks.push(Track {
             name: String::from(name),
-            next_idx: 0,
+            play_pos: PlayPos::Desync,
+            interpol: InterpolationState::new(),
             data,
         });
     }
@@ -56,8 +57,8 @@ impl Tracker {
 
         if new_play_line as i32 > self.play_line {
             for (track_idx, t) in self.tracks.iter_mut().enumerate() {
-                let e = t.check_advance_pos(new_play_line);
-                if let Some((v, _int)) = e {
+                let e = t.play_line(new_play_line, self.lines);
+                if let Some(v) = e {
                     output.emit_event(track_idx, v);
                 }
             }
@@ -81,6 +82,10 @@ impl Tracker {
                      value: f32, int: Option<Interpolation>) {
         self.tracks[track_idx].set_value(line, value, int);
     }
+
+    pub fn remove_value(&mut self, track_idx: usize, line: usize) {
+        self.tracks[track_idx].remove_value(line);
+    }
 }
 
 pub struct TrackerEditor {
@@ -94,6 +99,7 @@ pub struct TrackerEditor {
 pub enum TrackerInput {
     Escape,
     Enter,
+    Delete,
     Character(char),
     SetInterpStep,
     SetInterpLerp,
@@ -205,6 +211,12 @@ impl TrackerEditor {
                     _ => (),
                 }
             },
+            TrackerInput::Delete => {
+                self.tracker.borrow_mut()
+                    .remove_value(
+                        self.cur_track_idx,
+                        self.cur_line_idx);
+            },
             TrackerInput::RowDown => {
                 self.cur_line_idx += 1;
             },
@@ -269,15 +281,56 @@ pub enum Interpolation {
     Exp,
 }
 
+#[derive(Debug, Copy, Clone, PartialEq)]
+enum PlayPos {
+    Desync,
+    End,
+    At(usize),
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+struct InterpolationState {
+    line_a: usize,
+    line_b: usize,
+    val_a:  f32,
+    val_b:  f32,
+    int:    Interpolation,
+}
+
+impl InterpolationState {
+    fn new() -> Self {
+        InterpolationState {
+            line_a: 0,
+            line_b: 0,
+            val_a:  0.0,
+            val_b:  0.0,
+            int:    Interpolation::Empty,
+        }
+    }
+
+    fn clear(&mut self) {
+        self.int = Interpolation::Empty;
+    }
+}
+
 pub struct Track {
     name:     String,
-    next_idx: usize,
+    play_pos: PlayPos,
+    interpol: InterpolationState,
     // if index is at or above desired key, interpolate
     // else set index = 0 and restart search for right key
-    data: Vec<(usize, f32, Interpolation)>,
+    data:     Vec<(usize, f32, Interpolation)>,
 }
 
 impl Track {
+    fn remove_value(&mut self, line: usize) {
+        let entry = self.data.iter().enumerate().find(|v| (v.1).0 == line);
+        if let Some((idx, _val)) = entry {
+            self.data.remove(idx);
+            self.play_pos = PlayPos::Desync;
+        }
+    }
+
     fn set_value(&mut self, line: usize, value: f32, int: Option<Interpolation>) {
         let entry = self.data.iter().enumerate().find(|v| (v.1).0 >= line);
         if let Some((idx, val)) = entry {
@@ -289,59 +342,97 @@ impl Track {
                 }
             } else {
                 self.data.insert(
-                    idx, (line, value, int.unwrap_or(Interpolation::Empty)));
+                    idx, (line, value, int.unwrap_or(Interpolation::Lerp)));
             }
         } else {
-            self.data.push((line, value, int.unwrap_or(Interpolation::Empty)));
+            self.data.push((line, value, int.unwrap_or(Interpolation::Lerp)));
         }
     }
 
-    fn check_advance_pos(&mut self, line: usize) -> Option<(f32, Interpolation)> {
-        if self.next_idx > 0 {
-            //d// println!("NDAT^ {} => {}", self.next_idx, self.data[self.next_idx].0);
-            if self.next_idx >= self.data.len() {
-                return None;
-            }
+    // optimize finsind pos:
 
-            if line == self.data[self.next_idx].0 {
-                self.next_idx += 1;
-                Some((self.data[self.next_idx - 1].1, self.data[self.next_idx - 1].2))
-            } else {
-                None
-            }
-        } else {
-            //d// println!("NDAT_ {} => {}", 0, self.data[0].0);
-            if line == self.data[0].0 {
-                self.next_idx = 1;
-                Some((self.data[0].1, self.data[0].2))
-            } else {
-                None
+    fn check_sync(&mut self, line: usize) {
+        if self.play_pos == PlayPos::Desync {
+            let entry = self.data.iter().enumerate().find(|v| (v.1).0 >= line);
+            if let Some((idx, val)) = entry {
+                self.play_pos = PlayPos::At(idx);
             }
         }
     }
 
+    fn play_line(&mut self, line: usize, end_line: usize) -> Option<f32> {
+        self.check_sync(line);
+
+        match self.play_pos {
+            PlayPos::Desync  => None,
+            PlayPos::End     => None,
+            PlayPos::At(idx) => {
+                let d = self.data[idx];
+                if d.0 == line {
+                    if (idx + 1) >= self.data.len() {
+                        self.interpol.line_a = d.0;
+                        self.interpol.line_b = end_line;
+                        self.interpol.val_a  = d.1;
+                        self.interpol.val_b  = 0.0;
+                        self.interpol.int    = d.2;
+                        self.play_pos = PlayPos::End;
+                    } else {
+                        let j = self.data[idx + 1];
+                        self.interpol.line_a = d.0;
+                        self.interpol.line_b = j.0;
+                        self.interpol.val_a  = d.1;
+                        self.interpol.val_b  = j.1;
+                        self.interpol.int    = d.2;
+                        self.play_pos = PlayPos::At(idx + 1);
+                    }
+                    Some(d.1)
+                } else {
+                    None
+                }
+            }
+        }
+    }
+
+    /// Only works if the interpolation was initialized with self.play_line()!
     fn get_value(&mut self, line: usize) -> f32 {
-        if self.next_idx > self.data.len() {
-            0.0
+        let i = &mut self.interpol;
 
-        } else if self.next_idx == self.data.len() {
-            self.data[self.next_idx - 1].1
+        let mut diff = i.line_b - i.line_a;
+        if diff == 0 { diff = 1; }
 
-        } else if self.next_idx > 0 {
-            let interp     = self.data[self.next_idx - 1].2;
-            let last_pos   = self.data[self.next_idx - 1].0;
-            let last_value = self.data[self.next_idx - 1].1;
-            let next_pos   = self.data[self.next_idx].0;
-            let next_value = self.data[self.next_idx].1;
+        match i.int {
+            Interpolation::Empty => 0.0,
+            Interpolation::Step => {
+                if line == i.line_b {
+                    i.val_b
+                } else {
+                    i.val_a
+                }
+            },
+            Interpolation::Lerp => {
+                let x = ((line - i.line_a) as f64) / diff as f64;
+                (  i.val_a as f64 * (1.0 - x)
+                 + i.val_b as f64 * x)
+                as f32
+            },
+            Interpolation::SStep => {
+                let x = ((line - i.line_a) as f64) / diff as f64;
+                let x = if x < 0.0 { 0.0 } else { x };
+                let x = if x > 1.0 { 1.0 } else { x };
+                let x = x * x * (3.0 - 2.0 * x);
 
-            let diff = next_pos - last_pos;
-            let x    = diff as f64 / ((line - last_pos) as f64);
+                (  i.val_a as f64 * (1.0 - x)
+                 + i.val_b as f64 * x)
+                as f32
+            },
+            Interpolation::Exp => {
+                let x = ((line - i.line_a) as f64) / diff as f64;
+                let x = x * x;
 
-            (  last_value as f64 * (1.0 - x)
-             + next_value as f64 * x)
-            as f32
-        } else {
-            0.0
+                (  i.val_a as f64 * (1.0 - x)
+                 + i.val_b as f64 * x)
+                as f32
+            },
         }
     }
     fn serialize(&self) -> Vec<u8> {
@@ -350,7 +441,8 @@ impl Track {
     fn deserialize(_data: &[u8]) -> Track {
         Track {
             name:     String::from(""),
-            next_idx: 0,
+            play_pos: PlayPos::Desync,
+            interpol: InterpolationState::new(),
             data:     Vec::new(),
         }
     }
