@@ -1,6 +1,11 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 
+pub trait OutputHandler {
+    fn emit_event(&mut self, track_idx: usize, val: f32);
+    fn value_buffer(&mut self) -> &mut Vec<f32>;
+}
+
 pub struct Tracker {
 //    /// beats per minute
 //    bpm:            usize,
@@ -8,10 +13,10 @@ pub struct Tracker {
     lpb:            usize,
     /// ticks per row/line
     tpl:            usize,
-    /// number of rows in all tracks
-    rows:           usize,
+    /// number of lines in all tracks
+    lines:          usize,
     /// current play head, if -1 it will start with line 0
-    play_line:      i32,
+pub play_line:      i32,
     /// number of played ticks
     tick_count:     usize,
     tracks:         Vec<Track>,
@@ -22,7 +27,7 @@ impl Tracker {
         Tracker {
             lpb:    4, // => 4 beats are 1 `Tackt`(de)
             tpl:    10,
-            rows:   64,
+            lines:  64,
             tracks: Vec::new(),
             play_line: -1,
             tick_count: 0,
@@ -37,22 +42,38 @@ impl Tracker {
         });
     }
 
-    pub fn tick<T>(&mut self, output: &mut T) {
+    pub fn tick<T>(&mut self, output: &mut T)
+        where T: OutputHandler {
+
         self.tick_count += 1;
-        if self.play_line == -1 {
-            self.play_line = 0;
-        }
         let new_play_line = self.tick_count / self.tpl;
+
+        if new_play_line >= self.lines {
+            self.tick_count = 0;
+            self.play_line = -1;
+            return;
+        }
+
+        if new_play_line as i32 > self.play_line {
+            for (track_idx, t) in self.tracks.iter_mut().enumerate() {
+                let e = t.check_advance_pos(new_play_line);
+                if let Some((v, _int)) = e {
+                    output.emit_event(track_idx, v);
+                }
+            }
+        }
+        //d// println!("TC: {} {}/{}", self.tick_count, new_play_line, self.play_line);
+
         self.play_line = new_play_line as i32;
 
-        if new_play_line > self.play_line as usize {
-            for t in self.tracks.iter_mut() {
-                // t.check_advance_pos(...)
-            }
+        let buf : &mut Vec<f32> = &mut output.value_buffer();
+
+        if buf.len() < self.tracks.len() {
+            buf.resize(self.tracks.len(), 0.0);
         }
 
         for (idx, t) in self.tracks.iter_mut().enumerate() {
-            // output.values()[idx] = t.get_value(self.play_line as usize);
+            buf[idx] = t.get_value(new_play_line);
         }
     }
 
@@ -63,10 +84,10 @@ impl Tracker {
 }
 
 pub struct TrackerEditor {
-    tracker:        Rc<RefCell<Tracker>>,
+    pub tracker:        Rc<RefCell<Tracker>>,
     cur_track_idx:  usize,
     cur_input_nr:   String,
-    cur_line_idx:    usize,
+    cur_line_idx:   usize,
     redraw_flag:    bool,
 }
 
@@ -124,7 +145,7 @@ impl TrackerEditor {
             let mut track_line_pointer = 0;
 
             let mut rows_shown_count = 0;
-            for line_idx in 0..self.tracker.borrow().rows {
+            for line_idx in 0..self.tracker.borrow().lines {
                 if rows_shown_count > max_rows {
                     break;
                 }
@@ -222,8 +243,8 @@ impl TrackerEditor {
             self.cur_track_idx = self.tracker.borrow().tracks.len() - 1;
         }
 
-        if self.cur_line_idx >= self.tracker.borrow().rows {
-            self.cur_line_idx = self.tracker.borrow().rows;
+        if self.cur_line_idx >= self.tracker.borrow().lines {
+            self.cur_line_idx = self.tracker.borrow().lines;
         }
 
         if was_input {
@@ -277,13 +298,19 @@ impl Track {
 
     fn check_advance_pos(&mut self, line: usize) -> Option<(f32, Interpolation)> {
         if self.next_idx > 0 {
+            //d// println!("NDAT^ {} => {}", self.next_idx, self.data[self.next_idx].0);
+            if self.next_idx >= self.data.len() {
+                return None;
+            }
+
             if line == self.data[self.next_idx].0 {
                 self.next_idx += 1;
-                Some((self.data[0].1, self.data[0].2))
+                Some((self.data[self.next_idx - 1].1, self.data[self.next_idx - 1].2))
             } else {
                 None
             }
         } else {
+            //d// println!("NDAT_ {} => {}", 0, self.data[0].0);
             if line == self.data[0].0 {
                 self.next_idx = 1;
                 Some((self.data[0].1, self.data[0].2))
@@ -294,7 +321,13 @@ impl Track {
     }
 
     fn get_value(&mut self, line: usize) -> f32 {
-        if self.next_idx > 0 {
+        if self.next_idx > self.data.len() {
+            0.0
+
+        } else if self.next_idx == self.data.len() {
+            self.data[self.next_idx - 1].1
+
+        } else if self.next_idx > 0 {
             let interp     = self.data[self.next_idx - 1].2;
             let last_pos   = self.data[self.next_idx - 1].0;
             let last_value = self.data[self.next_idx - 1].1;

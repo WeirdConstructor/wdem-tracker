@@ -61,7 +61,7 @@ struct Painter<'a> {
     reg_view_font: &'a graphics::Font,
     cur_reg_line: usize,
     tvc: TrackerViewContext,
-    play_pos_row: usize,
+    play_pos_row: i32,
 }
 
 impl<'a> Painter<'a> {
@@ -143,7 +143,7 @@ impl<'a> TrackerEditorView for Painter<'a> {
         let txt_y = line_idx as f32 * ROW_HEIGHT;
 
         if track_idx == 0 {
-            if line_idx == self.play_pos_row {
+            if line_idx as i32 == self.play_pos_row {
                 self.draw_rect(
                     [0.4, 0.0, 0.0, 1.0],
                     [0.0, txt_y],
@@ -215,6 +215,10 @@ impl<'a> TrackerEditorView for Painter<'a> {
 //    }
 //}
 
+struct OutputValues {
+    values: Vec<f32>,
+}
+
 struct WDemTrackerGUI {
     font:    graphics::Font,
     tracker: Rc<RefCell<Tracker>>,
@@ -246,6 +250,16 @@ impl WDemTrackerGUI {
                     (5, 0.2, Interpolation::Lerp),
                 ]);
         }
+    }
+}
+
+impl tracker::OutputHandler for OutputValues {
+    fn emit_event(&mut self, track_idx: usize, val: f32) {
+        println!("EMIT: {}: {}", track_idx, val);
+    }
+
+    fn value_buffer(&mut self) -> &mut Vec<f32> {
+        return &mut self.values;
     }
 }
 
@@ -300,7 +314,12 @@ impl EventHandler for WDemTrackerGUI {
 
         let now_time = ggez::timer::time_since_start(ctx).as_millis();
 
+        let mut ov = OutputValues { values: Vec::new() };
 
+        self.editor.tracker.borrow_mut().tick(&mut ov);
+//        println!("OUT: {:?}", ov.values);
+
+        self.force_redraw = true;
         if self.force_redraw || self.editor.need_redraw() {
             graphics::clear(ctx, graphics::BLACK);
             let mut p = Painter {
@@ -309,7 +328,7 @@ impl EventHandler for WDemTrackerGUI {
                 cur_reg_line: 0,
                 tvc: TrackerViewContext {
                 },
-                play_pos_row: 0,
+                play_pos_row: self.editor.tracker.borrow().play_line,
             };
             self.force_redraw = false;
             self.editor.show_state(10, &mut p);
