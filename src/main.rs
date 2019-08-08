@@ -122,9 +122,10 @@ impl<'a> TrackerEditorView for Painter<'a> {
     }
 
     fn draw_track_cell(&mut self,
-        row_idx: usize,
+        line_idx: usize,
         track_idx: usize,
         cursor: bool,
+        beat: bool,
         value: Option<f32>,
         interp: Interpolation) {
 
@@ -139,10 +140,10 @@ impl<'a> TrackerEditorView for Painter<'a> {
             + TPOS_PAD
             + track_idx as f32 * (TRACK_WIDTH + TRACK_PAD);
 
-        let txt_y = row_idx as f32 * ROW_HEIGHT;
+        let txt_y = line_idx as f32 * ROW_HEIGHT;
 
         if track_idx == 0 {
-            if row_idx == self.play_pos_row {
+            if line_idx == self.play_pos_row {
                 self.draw_rect(
                     [0.4, 0.0, 0.0, 1.0],
                     [0.0, txt_y],
@@ -152,10 +153,11 @@ impl<'a> TrackerEditorView for Painter<'a> {
             }
 
             self.draw_text(
-                [0.6, 0.6, 0.6, 1.0],
-                [TRACK_PAD / 2.0, row_idx as f32 * ROW_HEIGHT],
+                if beat { [0.5, 8.0, 0.5, 1.0] }
+                else { [0.6, 0.6, 0.6, 1.0] },
+                [TRACK_PAD / 2.0, line_idx as f32 * ROW_HEIGHT],
                 ROW_HEIGHT * 0.6,
-                format!("[{:0>4}]", row_idx));
+                format!("[{:0>4}]", line_idx));
         }
 
         if cursor {
@@ -172,12 +174,19 @@ impl<'a> TrackerEditorView for Painter<'a> {
                 ROW_HEIGHT * 0.9,
                 s);
         } else {
-
-            self.draw_text(
-                [0.8, 0.8, 0.8, 1.0],
-                [txt_x, txt_y],
-                ROW_HEIGHT * 0.9,
-                s);
+            if beat {
+                self.draw_text(
+                    [0.6, 1.0, 0.6, 1.0],
+                    [txt_x, txt_y],
+                    ROW_HEIGHT * 0.9,
+                    s);
+            } else {
+                self.draw_text(
+                    [0.8, 0.8, 0.8, 1.0],
+                    [txt_x, txt_y],
+                    ROW_HEIGHT * 0.9,
+                    s);
+            }
         }
     }
 
