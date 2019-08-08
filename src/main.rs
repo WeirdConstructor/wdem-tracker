@@ -210,6 +210,7 @@ struct WDemTrackerGUI {
     font:    graphics::Font,
     tracker: Rc<RefCell<Tracker>>,
     editor:  TrackerEditor,
+    force_redraw: bool,
     i: i32,
 }
 
@@ -221,6 +222,7 @@ impl WDemTrackerGUI {
             font,
             tracker: trk.clone(),
             editor: TrackerEditor::new(trk),
+            force_redraw: true,
             i: 0,
         }
     }
@@ -238,24 +240,6 @@ impl WDemTrackerGUI {
     }
 }
 
-fn to_tracker_editor_input(keycode: KeyCode) -> Option<TrackerInput> {
-    match keycode {
-        KeyCode::Escape => Some(TrackerInput::Escape),
-//        KeyCode::Key0   => Some(TrackerInput::Digit(0)),
-//        KeyCode::Key1   => Some(TrackerInput::Digit(1)),
-//        KeyCode::Key2   => Some(TrackerInput::Digit(2)),
-//        KeyCode::Key3   => Some(TrackerInput::Digit(3)),
-//        KeyCode::Key4   => Some(TrackerInput::Digit(4)),
-//        KeyCode::Key5   => Some(TrackerInput::Digit(5)),
-//        KeyCode::Key6   => Some(TrackerInput::Digit(6)),
-//        KeyCode::Key7   => Some(TrackerInput::Digit(7)),
-//        KeyCode::Key8   => Some(TrackerInput::Digit(8)),
-//        KeyCode::Key9   => Some(TrackerInput::Digit(9)),
-//        KeyCode::
-        _ => None,
-    }
-}
-
 impl EventHandler for WDemTrackerGUI {
     fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
         Ok(())
@@ -265,7 +249,23 @@ impl EventHandler for WDemTrackerGUI {
         if keycode == KeyCode::Q {
             quit(ctx);
         } else {
-            println!("KEY: {:?}", keycode);
+            match keycode {
+                KeyCode::H => {
+                    self.editor.process_input(TrackerInput::TrackLeft);
+                },
+                KeyCode::J => {
+                    self.editor.process_input(TrackerInput::RowDown);
+                },
+                KeyCode::K => {
+                    self.editor.process_input(TrackerInput::RowUp);
+                },
+                KeyCode::L => {
+                    self.editor.process_input(TrackerInput::TrackRight);
+                },
+                _ => {
+                    println!("KEY: {:?}", keycode);
+                }
+            }
         }
     }
 
@@ -275,7 +275,6 @@ impl EventHandler for WDemTrackerGUI {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
-        graphics::clear(ctx, graphics::BLACK);
 
         self.i += 1;
         if self.i > 100 {
@@ -292,16 +291,20 @@ impl EventHandler for WDemTrackerGUI {
 
         let now_time = ggez::timer::time_since_start(ctx).as_millis();
 
-        let mut p = Painter {
-            ctx,
-            reg_view_font: &self.font,
-            cur_reg_line: 0,
-            tvc: TrackerViewContext {
-            },
-            play_pos_row: 0,
-        };
 
-        self.editor.show_state(10, &mut p);
+        if self.force_redraw || self.editor.need_redraw() {
+            graphics::clear(ctx, graphics::BLACK);
+            let mut p = Painter {
+                ctx,
+                reg_view_font: &self.font,
+                cur_reg_line: 0,
+                tvc: TrackerViewContext {
+                },
+                play_pos_row: 0,
+            };
+            self.force_redraw = false;
+            self.editor.show_state(10, &mut p);
+        }
 //        let scale_size = 300.0;
 //        {
 //            let mut p = Painter { ctx, cur_reg_line: 0, reg_view_font: &self.debug_font };
@@ -315,6 +318,7 @@ impl EventHandler for WDemTrackerGUI {
     fn resize_event(&mut self, ctx: &mut Context, width: f32, height: f32) {
         graphics::set_screen_coordinates(ctx,
             graphics::Rect::new(0.0, 0.0, width, height)).unwrap();
+        self.force_redraw = true;
     }
 }
 

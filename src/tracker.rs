@@ -28,6 +28,11 @@ impl Tracker {
             data,
         });
     }
+
+    pub fn set_value(&mut self, track_idx: usize, pos: usize,
+                     value: f32, int: Option<Interpolation>) {
+        self.tracks[track_idx].set_value(pos, value, int);
+    }
 }
 
 pub struct TrackerEditor {
@@ -77,6 +82,8 @@ impl TrackerEditor {
         }
     }
 
+    pub fn need_redraw(&self) -> bool { self.redraw_flag }
+
     pub fn show_state<T>(&mut self, max_rows: usize, view: &mut T) where T: TrackerEditorView {
 //        if !self.redraw_flag { return; }
 //        self.redraw_flag = false;
@@ -121,12 +128,16 @@ impl TrackerEditor {
             view.end_track();
         }
         view.end_drawing();
+        self.redraw_flag = false;
     }
 
     pub fn process_input(&mut self, input: TrackerInput) {
+        let mut was_input = false;
+
+        self.redraw_flag = true;
+
         match input {
             TrackerInput::Escape => {
-                self.cur_input_nr = String::from("");
             },
             TrackerInput::Enter => {
                 // parse self.cur_input_nr to float and enter into current row.
@@ -134,25 +145,31 @@ impl TrackerEditor {
             TrackerInput::Character(c) => {
                 match c {
                     '0'..='9' => {
+                        was_input = true;
                         self.cur_input_nr += &c.to_string();
                     },
                     '.' => {
+                        was_input = true;
                         self.cur_input_nr += &c.to_string();
                     },
                     _ => (),
                 }
             },
             TrackerInput::RowDown => {
-                // row idx += 1
+                self.cur_row_idx += 1;
             },
             TrackerInput::RowUp => {
-                // row idx -= 1
+                if self.cur_row_idx > 0 {
+                    self.cur_row_idx -= 1;
+                }
             },
             TrackerInput::TrackLeft => {
-                // track idx += 1
+                if self.cur_track_idx > 0 {
+                    self.cur_track_idx -= 1;
+                }
             },
             TrackerInput::TrackRight => {
-                // track idx -= 1
+                self.cur_track_idx += 1;
             },
             TrackerInput::SetInterpStep => {
                 // set interp mode of cur row to *
@@ -166,6 +183,29 @@ impl TrackerEditor {
             TrackerInput::SetInterpExp => {
                 // set interp mode of cur row to *
             },
+        };
+
+        if self.tracker.borrow().tracks.len() == 0 {
+            return;
+        }
+
+        if self.cur_track_idx >= self.tracker.borrow().tracks.len() {
+            self.cur_track_idx = self.tracker.borrow().tracks.len() - 1;
+        }
+
+        if self.cur_row_idx >= self.tracker.borrow().rows {
+            self.cur_row_idx = self.tracker.borrow().rows;
+        }
+
+        if was_input {
+            self.tracker.borrow_mut()
+                .set_value(
+                    self.cur_track_idx,
+                    self.cur_row_idx,
+                    10.0,
+                    None);
+        } else {
+            self.cur_input_nr = String::from("");
         }
     }
 }
@@ -188,6 +228,24 @@ pub struct Track {
 }
 
 impl Track {
+    fn set_value(&mut self, pos: usize, value: f32, int: Option<Interpolation>) {
+        let entry = self.data.iter().enumerate().find(|v| (v.1).0 >= pos);
+        if let Some((idx, val)) = entry {
+            if val.0 == pos {
+                if int.is_none() {
+                    self.data[idx] = (pos, value, val.2);
+                } else {
+                    self.data[idx] = (pos, value, int.unwrap());
+                }
+            } else {
+                self.data.insert(
+                    idx, (pos, value, int.unwrap_or(Interpolation::Empty)));
+            }
+        } else {
+            self.data.push((pos, value, int.unwrap_or(Interpolation::Empty)));
+        }
+    }
+
     fn get_value(&mut self, _pos: usize) -> f32 {
         0.0
     }
