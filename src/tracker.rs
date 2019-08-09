@@ -3,10 +3,18 @@ use std::cell::RefCell;
 
 pub trait OutputHandler {
     fn emit_event(&mut self, track_idx: usize, val: f32);
+    fn emit_play_line(&mut self, play_line: i32);
     fn value_buffer(&mut self) -> &mut Vec<f32>;
 }
 
-pub struct Tracker {
+pub trait TrackerSync {
+    fn add_track(&mut self, t: Track);
+    fn set_value(&mut self, track_idx: usize, line: usize,
+                     value: f32, int: Option<Interpolation>);
+    fn remove_value(&mut self, track_idx: usize, line: usize);
+}
+
+pub struct Tracker<SYNC> {
 //    /// beats per minute
 //    bpm:            usize,
     /// lines per beat
@@ -20,10 +28,15 @@ pub play_line:      i32,
     /// number of played ticks
     tick_count:     usize,
     tracks:         Vec<Track>,
+    /// the synchronization class:
+    sync:           SYNC,
 }
 
-impl Tracker {
-    pub fn new() -> Self {
+// TODO: Make an interface between tracker editor and tracker to replicate and
+//       synchronize modifications between GUI and rendering thread.
+
+impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
+    pub fn new(sync: SYNC) -> Self {
         Tracker {
             lpb:    4, // => 4 beats are 1 `Tackt`(de)
             tpl:    10,
@@ -31,16 +44,14 @@ impl Tracker {
             tracks: Vec::new(),
             play_line: -1,
             tick_count: 0,
+            sync,
         }
     }
 
     pub fn add_track(&mut self, name: &str, data: Vec<(usize, f32, Interpolation)>) {
-        self.tracks.push(Track {
-            name: String::from(name),
-            play_pos: PlayPos::Desync,
-            interpol: InterpolationState::new(),
-            data,
-        });
+        let t = Track::new(name, data);
+        self.sync.add_track(t.clone());
+        self.tracks.push(t);
     }
 
     pub fn tick<T>(&mut self, output: &mut T)
@@ -56,6 +67,8 @@ impl Tracker {
         }
 
         if new_play_line as i32 > self.play_line {
+            output.emit_play_line(self.play_line);
+
             for (track_idx, t) in self.tracks.iter_mut().enumerate() {
                 let e = t.play_line(new_play_line, self.lines);
                 if let Some(v) = e {
@@ -80,22 +93,25 @@ impl Tracker {
 
     pub fn set_value(&mut self, track_idx: usize, line: usize,
                      value: f32, int: Option<Interpolation>) {
+        self.sync.set_value(track_idx, line, value, int);
         self.tracks[track_idx].set_value(line, value, int);
     }
 
     pub fn remove_value(&mut self, track_idx: usize, line: usize) {
+        self.sync.remove_value(track_idx, line);
         self.tracks[track_idx].remove_value(line);
     }
 }
 
-pub struct TrackerEditor {
-    pub tracker:        Rc<RefCell<Tracker>>,
+pub struct TrackerEditor<SYNC> {
+    pub tracker:    Rc<RefCell<Tracker<SYNC>>>,
     cur_track_idx:  usize,
     cur_input_nr:   String,
     cur_line_idx:   usize,
     redraw_flag:    bool,
 }
 
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum TrackerInput {
     Enter,
     Delete,
@@ -126,8 +142,8 @@ pub trait TrackerEditorView<C> {
     fn end_drawing(&mut self, ctx: &mut C);
 }
 
-impl TrackerEditor {
-    pub fn new(tracker: Rc<RefCell<Tracker>>) -> Self {
+impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
+    pub fn new(tracker: Rc<RefCell<Tracker<SYNC>>>) -> Self {
         TrackerEditor {
             tracker,
             cur_track_idx: 0,
@@ -300,6 +316,7 @@ struct InterpolationState {
     val_a:  f32,
     val_b:  f32,
     int:    Interpolation,
+    desync: bool,
 }
 
 impl InterpolationState {
@@ -310,29 +327,50 @@ impl InterpolationState {
             val_a:  0.0,
             val_b:  0.0,
             int:    Interpolation::Empty,
+            desync: true,
         }
     }
 
     fn clear(&mut self) {
         self.int = Interpolation::Empty;
     }
+
+    fn desync(&mut self) {
+        self.clear();
+        self.desync = true;
+    }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Track {
-    name:     String,
+    pub name: String,
     play_pos: PlayPos,
     interpol: InterpolationState,
     // if index is at or above desired key, interpolate
     // else set index = 0 and restart search for right key
-    data:     Vec<(usize, f32, Interpolation)>,
+    pub data: Vec<(usize, f32, Interpolation)>,
 }
 
 impl Track {
+    fn new(name: &str, data: Vec<(usize, f32, Interpolation)>) -> Self {
+        Track {
+            name: String::from(name),
+            play_pos: PlayPos::Desync,
+            interpol: InterpolationState::new(),
+            data,
+        }
+    }
+
+    fn desync(&mut self) {
+        self.play_pos = PlayPos::Desync;
+        self.interpol.desync();
+    }
+
     fn remove_value(&mut self, line: usize) {
         let entry = self.data.iter().enumerate().find(|v| (v.1).0 == line);
         if let Some((idx, _val)) = entry {
             self.data.remove(idx);
-            self.play_pos = PlayPos::Desync;
+            self.desync();
         }
     }
 
@@ -353,22 +391,56 @@ impl Track {
             self.data.push((line, value, int.unwrap_or(Interpolation::Lerp)));
         }
 
-        self.play_pos = PlayPos::Desync;
+        self.desync();
     }
 
-    // optimize finsind pos:
+    fn sync_interpol_to_play_line(&mut self, line: usize, end_line: usize) {
+        // idx.0 is either == line or > line. If > line, then we need to find
+        // the previous data index (if any) and set the interpolation from that.
+        if !self.interpol.desync { return; }
 
-    fn check_sync(&mut self, line: usize) {
+        match self.play_pos {
+            PlayPos::End     => (), // get prev. iterpol
+            PlayPos::At(idx) => {
+                ()
+                // index.0 == current line => get next end point
+                // index.0 > curent line => get prev interpol
+            },
+            _ => (),
+        }
+
+//        let d = self.data[idx];
+//        if (idx + 1) >= self.data.len() {
+//            self.interpol.line_a = d.0;
+//            self.interpol.line_b = end_line;
+//            self.interpol.val_a  = d.1;
+//            self.interpol.val_b  = 0.0;
+//            self.interpol.int    = d.2;
+//            self.play_pos = PlayPos::End;
+//        } else {
+//            let j = self.data[idx + 1];
+//            self.interpol.line_a = d.0;
+//            self.interpol.line_b = j.0;
+//            self.interpol.val_a  = d.1;
+//            self.interpol.val_b  = j.1;
+//            self.interpol.int    = d.2;
+//            self.play_pos = PlayPos::At(idx + 1);
+//        }
+    }
+
+    fn check_sync(&mut self, line: usize, end_line: usize) {
         if self.play_pos == PlayPos::Desync {
             let entry = self.data.iter().enumerate().find(|v| (v.1).0 >= line);
             if let Some((idx, _val)) = entry {
                 self.play_pos = PlayPos::At(idx);
+            } else {
+                self.play_pos = PlayPos::End;
             }
         }
     }
 
     fn play_line(&mut self, line: usize, end_line: usize) -> Option<f32> {
-        self.check_sync(line);
+        self.check_sync(line, end_line);
 
         match self.play_pos {
             PlayPos::Desync  => None,

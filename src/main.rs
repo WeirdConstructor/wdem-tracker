@@ -242,13 +242,32 @@ impl TrackerEditorView<Context> for Painter {
 //    }
 //}
 
+struct ThreadTrackSync {
+}
+
+impl ThreadTrackSync {
+    fn new() -> Self {
+        ThreadTrackSync { }
+    }
+}
+
+impl tracker::TrackerSync for ThreadTrackSync {
+    fn add_track(&mut self, t: Track) {
+    }
+    fn set_value(&mut self, track_idx: usize, line: usize,
+                     value: f32, int: Option<Interpolation>) {
+    }
+    fn remove_value(&mut self, track_idx: usize, line: usize) {
+    }
+}
+
 struct OutputValues {
     values: Vec<f32>,
 }
 
 struct WDemTrackerGUI {
-    tracker: Rc<RefCell<Tracker>>,
-    editor:  TrackerEditor,
+    tracker: Rc<RefCell<Tracker<ThreadTrackSync>>>,
+    editor:  TrackerEditor<ThreadTrackSync>,
     painter: Rc<RefCell<Painter>>,
     force_redraw: bool,
     i: i32,
@@ -256,8 +275,9 @@ struct WDemTrackerGUI {
 
 impl WDemTrackerGUI {
     pub fn new(ctx: &mut Context) -> WDemTrackerGUI {
+        let sync = ThreadTrackSync::new();
         let font = graphics::Font::new(ctx, "/DejaVuSansMono.ttf").unwrap();
-        let trk = Rc::new(RefCell::new(Tracker::new()));
+        let trk = Rc::new(RefCell::new(Tracker::new(sync)));
         WDemTrackerGUI {
             tracker: trk.clone(),
             editor: TrackerEditor::new(trk),
@@ -289,6 +309,10 @@ impl WDemTrackerGUI {
 impl tracker::OutputHandler for OutputValues {
     fn emit_event(&mut self, track_idx: usize, val: f32) {
         println!("EMIT: {}: {}", track_idx, val);
+    }
+
+    fn emit_play_line(&mut self, play_line: i32) {
+        println!("EMIT PP: {}", play_line);
     }
 
     fn value_buffer(&mut self) -> &mut Vec<f32> {
