@@ -377,7 +377,9 @@ impl EventHandler for WDemTrackerGUI {
         let mut ov = OutputValues { values: Vec::new() };
 
         self.editor.tracker.borrow_mut().tick(&mut ov);
-        //d// println!("OUT: {:?}", ov.values);
+//        if !ov.values.is_empty() {
+//            println!("OUT: {:?}", ov.values[0]);
+//        }
 
         self.force_redraw = true;
         if self.force_redraw || self.editor.need_redraw() {

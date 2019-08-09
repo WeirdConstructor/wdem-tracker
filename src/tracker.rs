@@ -1,22 +1,47 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 
+/// This trait handles the output of a Tracker when being driven
+/// by the tick() method. It generates events for starting notes
+/// on a synthesizer and returns a vector of the interpolated values
+/// on all tracks. The emit_play_line() function gives feedback of the
+/// current song position in terms of the track line index.
 pub trait OutputHandler {
+    /// Called by Tracker::tick() when a new line started and
+    /// a track has a new value defined. Useful for driving note on/off
+    /// events on a synthesizer.
     fn emit_event(&mut self, track_idx: usize, val: f32);
+    /// Called when the Tracker::tick() function advanced to a new line.
     fn emit_play_line(&mut self, play_line: i32);
+    /// This should return a buffer for storing the interpolated values
+    /// of all tracks. Useful for driving synthesizer automation.
     fn value_buffer(&mut self) -> &mut Vec<f32>;
 }
 
+/// This trait provides an interface to synchronize the track data
+/// between two Tracker instances. The main purpose is to connect a
+/// frontend Tracker with an audio thread tracker in such a way, that
+/// changes to the track data is transmitted to the backend thread.
+/// How threading is done is up to the implementor of this trait.
+/// You may even not use threads at all and use some network protocol
+/// for synchronization.
 pub trait TrackerSync {
+    /// Called by Tracker when a new Track is added.
     fn add_track(&mut self, t: Track);
+    /// Called by Tracker when a value in a specific track and line
+    /// is added.
     fn set_value(&mut self, track_idx: usize, line: usize,
                      value: f32, int: Option<Interpolation>);
+    /// Called by Tracker when a value is removed from a track.
     fn remove_value(&mut self, track_idx: usize, line: usize);
 }
 
-pub struct Tracker<SYNC> {
-//    /// beats per minute
-//    bpm:            usize,
+/// This structure stores the state of a tracker.
+/// It stores the play state aswell as the actual track data.
+/// The SYNC type must implement the TrackerSync trait.
+/// It is responsible for connecting the tracker frontend
+/// in a graphics thread with a tracker in the audio thread.
+pub struct Tracker<SYNC> where SYNC: TrackerSync {
     /// lines per beat
     lpb:            usize,
     /// ticks per row/line
@@ -27,20 +52,18 @@ pub struct Tracker<SYNC> {
 pub play_line:      i32,
     /// number of played ticks
     tick_count:     usize,
+    /// The actual track data.
     tracks:         Vec<Track>,
     /// the synchronization class:
     sync:           SYNC,
 }
-
-// TODO: Make an interface between tracker editor and tracker to replicate and
-//       synchronize modifications between GUI and rendering thread.
 
 impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
     pub fn new(sync: SYNC) -> Self {
         Tracker {
             lpb:    4, // => 4 beats are 1 `Tackt`(de)
             tpl:    10,
-            lines:  64,
+            lines:  16,
             tracks: Vec::new(),
             play_line: -1,
             tick_count: 0,
@@ -103,7 +126,7 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
     }
 }
 
-pub struct TrackerEditor<SYNC> {
+pub struct TrackerEditor<SYNC> where SYNC: TrackerSync {
     pub tracker:    Rc<RefCell<Tracker<SYNC>>>,
     cur_track_idx:  usize,
     cur_input_nr:   String,
@@ -335,6 +358,22 @@ impl InterpolationState {
         self.int = Interpolation::Empty;
     }
 
+    fn to_end(&mut self, d: (usize, f32, Interpolation), end_line: usize) {
+        self.line_a = d.0;
+        self.val_a  = d.1;
+        self.int    = d.2;
+        self.line_b = end_line;
+        self.val_b  = 0.0;
+    }
+
+    fn to_next(&mut self, d: (usize, f32, Interpolation), db: (usize, f32, Interpolation)) {
+        self.line_a = d.0;
+        self.val_a  = d.1;
+        self.int    = d.2;
+        self.line_b = db.0;
+        self.val_b  = db.1;
+    }
+
     fn desync(&mut self) {
         self.clear();
         self.desync = true;
@@ -394,38 +433,44 @@ impl Track {
         self.desync();
     }
 
-    fn sync_interpol_to_play_line(&mut self, line: usize, end_line: usize) {
-        // idx.0 is either == line or > line. If > line, then we need to find
-        // the previous data index (if any) and set the interpolation from that.
-        if !self.interpol.desync { return; }
-
+    fn sync_interpol_to_play_line(&mut self, line: usize, end_line: usize) -> Option<f32> {
         match self.play_pos {
-            PlayPos::End     => (), // get prev. iterpol
-            PlayPos::At(idx) => {
-                ()
-                // index.0 == current line => get next end point
-                // index.0 > curent line => get prev interpol
-            },
-            _ => (),
-        }
+            PlayPos::End     => {
+                if self.data.is_empty() {
+                    self.interpol.clear();
+                } else {
+                    let d = self.data[self.data.len() - 1];
+                    self.interpol.to_end(d, end_line);
+                }
 
-//        let d = self.data[idx];
-//        if (idx + 1) >= self.data.len() {
-//            self.interpol.line_a = d.0;
-//            self.interpol.line_b = end_line;
-//            self.interpol.val_a  = d.1;
-//            self.interpol.val_b  = 0.0;
-//            self.interpol.int    = d.2;
-//            self.play_pos = PlayPos::End;
-//        } else {
-//            let j = self.data[idx + 1];
-//            self.interpol.line_a = d.0;
-//            self.interpol.line_b = j.0;
-//            self.interpol.val_a  = d.1;
-//            self.interpol.val_b  = j.1;
-//            self.interpol.int    = d.2;
-//            self.play_pos = PlayPos::At(idx + 1);
-//        }
+                None
+            },
+            PlayPos::At(idx) => {
+                let d = self.data[idx];
+                if d.0 == line {
+                    if (idx + 1) >= self.data.len() {
+                        self.interpol.to_end(d, end_line);
+                        self.play_pos = PlayPos::End;
+                    } else {
+                        self.interpol.to_next(d, self.data[idx + 1]);
+                        self.play_pos = PlayPos::At(idx + 1);
+                    }
+
+                    Some(d.1)
+                } else { // assuming here: d.0 > line
+                    if idx == 0 {
+                        self.interpol.to_next(
+                            (0, 0.0, Interpolation::Step), d);
+                    } else {
+                        self.interpol.to_next(
+                            self.data[idx - 1], d);
+                    }
+
+                    None
+                }
+            },
+            _ => None,
+        }
     }
 
     fn check_sync(&mut self, line: usize, end_line: usize) {
@@ -441,35 +486,7 @@ impl Track {
 
     fn play_line(&mut self, line: usize, end_line: usize) -> Option<f32> {
         self.check_sync(line, end_line);
-
-        match self.play_pos {
-            PlayPos::Desync  => None,
-            PlayPos::End     => None,
-            PlayPos::At(idx) => {
-                let d = self.data[idx];
-                if d.0 == line {
-                    if (idx + 1) >= self.data.len() {
-                        self.interpol.line_a = d.0;
-                        self.interpol.line_b = end_line;
-                        self.interpol.val_a  = d.1;
-                        self.interpol.val_b  = 0.0;
-                        self.interpol.int    = d.2;
-                        self.play_pos = PlayPos::End;
-                    } else {
-                        let j = self.data[idx + 1];
-                        self.interpol.line_a = d.0;
-                        self.interpol.line_b = j.0;
-                        self.interpol.val_a  = d.1;
-                        self.interpol.val_b  = j.1;
-                        self.interpol.int    = d.2;
-                        self.play_pos = PlayPos::At(idx + 1);
-                    }
-                    Some(d.1)
-                } else {
-                    None
-                }
-            }
-        }
+        self.sync_interpol_to_play_line(line, end_line)
     }
 
     /// Only works if the interpolation was initialized with self.play_line()!
