@@ -56,19 +56,19 @@ struct TrackerViewContext {
     
 }
 
-struct Painter<'a> {
-    ctx: &'a mut Context,
-    reg_view_font: &'a graphics::Font,
+struct Painter {
+    reg_view_font: graphics::Font,
     cur_reg_line: usize,
     tvc: TrackerViewContext,
     play_pos_row: i32,
+    text_cache: std::collections::HashMap<String, graphics::Text>,
 }
 
-impl<'a> Painter<'a> {
-    fn draw_rect(&mut self, color: [f32; 4], pos: [f32; 2], size: [f32; 2], filled: bool, thickness: f32) {
+impl Painter {
+    fn draw_rect(&mut self, ctx: &mut Context, color: [f32; 4], pos: [f32; 2], size: [f32; 2], filled: bool, thickness: f32) {
         let r =
             graphics::Mesh::new_rectangle(
-                self.ctx,
+                ctx,
                 if filled {
                     graphics::DrawMode::fill()
                 } else {
@@ -77,7 +77,7 @@ impl<'a> Painter<'a> {
                 graphics::Rect::new(0.0, 0.0, size[0], size[1]),
                 graphics::Color::from(color)).unwrap();
         graphics::draw(
-            self.ctx,
+            ctx,
             &r,
             ([pos[0], pos[1]],
              0.0,
@@ -85,12 +85,31 @@ impl<'a> Painter<'a> {
              graphics::WHITE)).unwrap();
     }
 
-    fn draw_text(&mut self, color: [f32; 4], pos: [f32; 2], size: f32, text: String) {
-        let txt =
-            graphics::Text::new((text, *self.reg_view_font, size));
-        graphics::draw(
-            self.ctx, &txt,
-            (pos, 0.0, [0.0, 0.0], color.into())).unwrap();
+    fn draw_text(&mut self, ctx: &mut Context, color: [f32; 4], pos: [f32; 2], size: f32, text: String) {
+        let txt = self.text_cache.get(&text);
+        let txt_elem = if let Some(t) = txt {
+            t
+        } else {
+            //d// println!("NEW TEXT {}", text);
+            let t = graphics::Text::new((text.clone(), self.reg_view_font, size));
+            self.text_cache.insert(text.clone(), t);
+            self.text_cache.get(&text).unwrap()
+        };
+
+        graphics::queue_text(
+            ctx, txt_elem, pos, Some(color.into()));
+
+//        graphics::draw(
+//            ctx, txt_elem,
+//            (pos, 0.0, [0.0, 0.0], color.into())).unwrap();
+    }
+
+    fn finish_draw_text(&mut self, ctx: &mut Context) {
+        graphics::draw_queued_text(
+            ctx,
+            graphics::DrawParam::default(),
+            None,
+            graphics::FilterMode::Linear).unwrap();
     }
 }
 
@@ -100,20 +119,21 @@ const TRACK_PAD     : f32 =  0.0;
 const TRACK_VAL_PAD : f32 =  4.0;
 const ROW_HEIGHT    : f32 = 18.0;
 
-impl<'a> TrackerEditorView for Painter<'a> {
-    fn start_drawing(&mut self) {
+impl TrackerEditorView<Context> for Painter {
+    fn start_drawing(&mut self, _ctx: &mut Context) {
     }
 
-    fn end_track(&mut self) {
+    fn end_track(&mut self, _ctx: &mut Context) {
     }
 
-    fn start_track(&mut self, track_idx: usize, name: &str, cursor: bool) {
+    fn start_track(&mut self, ctx: &mut Context, track_idx: usize, _name: &str, cursor: bool) {
         let mut clr = [0.8, 0.8, 0.8, 1.0];
         if cursor {
             clr = [1.0, 0.7, 0.7, 1.0];
         }
 
         self.draw_rect(
+            ctx,
             clr,
             [TPOS_PAD + track_idx as f32 * (TRACK_WIDTH + TRACK_PAD), 0.0],
             [TRACK_WIDTH, (10.0 + 1.0) * ROW_HEIGHT],
@@ -121,13 +141,14 @@ impl<'a> TrackerEditorView for Painter<'a> {
             0.5);
     }
 
-    fn draw_track_cell(&mut self,
+    fn draw_track_cell(&mut self, ctx: &mut Context,
+        scroll_offs: usize,
         line_idx: usize,
         track_idx: usize,
         cursor: bool,
         beat: bool,
         value: Option<f32>,
-        interp: Interpolation) {
+        _interp: Interpolation) {
 
         let s = if let Some(v) = value {
             format!("{:>03.2}", v)
@@ -140,11 +161,12 @@ impl<'a> TrackerEditorView for Painter<'a> {
             + TPOS_PAD
             + track_idx as f32 * (TRACK_WIDTH + TRACK_PAD);
 
-        let txt_y = line_idx as f32 * ROW_HEIGHT;
+        let txt_y = (line_idx - scroll_offs) as f32 * ROW_HEIGHT;
 
         if track_idx == 0 {
             if line_idx as i32 == self.play_pos_row {
                 self.draw_rect(
+                    ctx,
                     [0.4, 0.0, 0.0, 1.0],
                     [0.0, txt_y],
                     [800.0, ROW_HEIGHT],
@@ -153,15 +175,17 @@ impl<'a> TrackerEditorView for Painter<'a> {
             }
 
             self.draw_text(
+                ctx,
                 if beat { [0.5, 8.0, 0.5, 1.0] }
                 else { [0.6, 0.6, 0.6, 1.0] },
-                [TRACK_PAD / 2.0, line_idx as f32 * ROW_HEIGHT],
+                [TRACK_PAD / 2.0, txt_y],
                 ROW_HEIGHT * 0.6,
                 format!("[{:0>4}]", line_idx));
         }
 
         if cursor {
             self.draw_rect(
+                ctx,
                 [0.4, 0.8, 0.4, 1.0],
                 [txt_x - TRACK_VAL_PAD + 1.0, txt_y + 1.0],
                 [TRACK_WIDTH - 2.0, ROW_HEIGHT - 2.0],
@@ -169,6 +193,7 @@ impl<'a> TrackerEditorView for Painter<'a> {
                 0.5);
 
             self.draw_text(
+                ctx,
                 [0.0, 0.0, 0.0, 1.0],
                 [txt_x, txt_y],
                 ROW_HEIGHT * 0.9,
@@ -176,12 +201,14 @@ impl<'a> TrackerEditorView for Painter<'a> {
         } else {
             if beat {
                 self.draw_text(
+                    ctx,
                     [0.6, 1.0, 0.6, 1.0],
                     [txt_x, txt_y],
                     ROW_HEIGHT * 0.9,
                     s);
             } else {
                 self.draw_text(
+                    ctx,
                     [0.8, 0.8, 0.8, 1.0],
                     [txt_x, txt_y],
                     ROW_HEIGHT * 0.9,
@@ -190,7 +217,7 @@ impl<'a> TrackerEditorView for Painter<'a> {
         }
     }
 
-    fn end_drawing(&mut self) {
+    fn end_drawing(&mut self, ctx: &mut Context) {
     }
 }
 
@@ -220,9 +247,9 @@ struct OutputValues {
 }
 
 struct WDemTrackerGUI {
-    font:    graphics::Font,
     tracker: Rc<RefCell<Tracker>>,
     editor:  TrackerEditor,
+    painter: Rc<RefCell<Painter>>,
     force_redraw: bool,
     i: i32,
 }
@@ -232,9 +259,15 @@ impl WDemTrackerGUI {
         let font = graphics::Font::new(ctx, "/DejaVuSansMono.ttf").unwrap();
         let trk = Rc::new(RefCell::new(Tracker::new()));
         WDemTrackerGUI {
-            font,
             tracker: trk.clone(),
             editor: TrackerEditor::new(trk),
+            painter: Rc::new(RefCell::new(Painter {
+                text_cache: std::collections::HashMap::new(),
+                reg_view_font: font,
+                cur_reg_line: 0,
+                tvc: TrackerViewContext { },
+                play_pos_row: 0,
+            })),
             force_redraw: true,
             i: 0,
         }
@@ -289,14 +322,14 @@ impl EventHandler for WDemTrackerGUI {
                     self.editor.process_input(TrackerInput::TrackRight);
                 },
                 _ => {
-                    println!("KEY: {:?}", keycode);
+                    //d// println!("KEY: {:?}", keycode);
                 }
             }
         }
     }
 
     fn text_input_event(&mut self, _ctx: &mut Context, character: char) {
-        println!("CHR: {:?}", character);
+        //d// println!("CHR: {:?}", character);
         self.editor.process_input(TrackerInput::Character(character));
     }
 
@@ -308,14 +341,14 @@ impl EventHandler for WDemTrackerGUI {
             self.i = 0;
         }
 
-        let sz = graphics::drawable_size(ctx);
+        let _sz = graphics::drawable_size(ctx);
 //        let param =
 //            graphics::DrawParam::from(
 //                ([sz.0 / 2.0, sz.1 / 2.0],));
 //        graphics::push_transform(ctx, Some(param.to_matrix()));
 //        graphics::apply_transformations(ctx)?;
 
-        let now_time = ggez::timer::time_since_start(ctx).as_millis();
+        let _now_time = ggez::timer::time_since_start(ctx).as_millis();
 
         let mut ov = OutputValues { values: Vec::new() };
 
@@ -325,16 +358,10 @@ impl EventHandler for WDemTrackerGUI {
         self.force_redraw = true;
         if self.force_redraw || self.editor.need_redraw() {
             graphics::clear(ctx, graphics::BLACK);
-            let mut p = Painter {
-                ctx,
-                reg_view_font: &self.font,
-                cur_reg_line: 0,
-                tvc: TrackerViewContext {
-                },
-                play_pos_row: self.editor.tracker.borrow().play_line,
-            };
+            self.painter.borrow_mut().play_pos_row = self.editor.tracker.borrow().play_line;
             self.force_redraw = false;
-            self.editor.show_state(10, &mut p);
+            self.editor.show_state(2, 40, &mut *self.painter.borrow_mut(), ctx);
+            self.painter.borrow_mut().finish_draw_text(ctx);
         }
 //        let scale_size = 300.0;
 //        {

@@ -97,7 +97,6 @@ pub struct TrackerEditor {
 }
 
 pub enum TrackerInput {
-    Escape,
     Enter,
     Delete,
     Character(char),
@@ -111,19 +110,20 @@ pub enum TrackerInput {
     TrackRight,
 }
 
-pub trait TrackerEditorView {
-    fn start_drawing(&mut self);
-    fn start_track(&mut self, track_idx: usize, name: &str, cursor: bool);
+pub trait TrackerEditorView<C> {
+    fn start_drawing(&mut self, ctx: &mut C);
+    fn start_track(&mut self, ctx: &mut C, track_idx: usize, name: &str, cursor: bool);
     fn draw_track_cell(
-        &mut self,
+        &mut self, ctx: &mut C,
+        scroll_offs: usize,
         line_idx: usize,
         track_idx: usize,
         cursor: bool,
         beat: bool,
         value: Option<f32>,
         interp: Interpolation);
-    fn end_track(&mut self);
-    fn end_drawing(&mut self);
+    fn end_track(&mut self, ctx: &mut C);
+    fn end_drawing(&mut self, ctx: &mut C);
 }
 
 impl TrackerEditor {
@@ -139,41 +139,48 @@ impl TrackerEditor {
 
     pub fn need_redraw(&self) -> bool { self.redraw_flag }
 
-    pub fn show_state<T>(&mut self, max_rows: usize, view: &mut T) where T: TrackerEditorView {
+    pub fn show_state<T, C>(&mut self, scroll_offs: usize, max_rows: usize, view: &mut T, ctx: &mut C) where T: TrackerEditorView<C> {
 //        if !self.redraw_flag { return; }
 //        self.redraw_flag = false;
 
-        let mut cc = 0;
-        view.start_drawing();
+        view.start_drawing(ctx);
         for (track_idx, track) in self.tracker.borrow().tracks.iter().enumerate() {
-            view.start_track(track_idx, &track.name, self.cur_track_idx == track_idx);
+            view.start_track(ctx, track_idx, &track.name, self.cur_track_idx == track_idx);
 
-            let mut track_line_pointer = 0;
+            let first_data_cell = track.data.iter().enumerate().find(|v| (v.1).0 >= scroll_offs);
+            let mut track_line_pointer =
+                if let Some((i, _v)) = first_data_cell {
+                    i
+                } else {
+                    0
+                };
 
             let mut rows_shown_count = 0;
-            for line_idx in 0..self.tracker.borrow().lines {
+            for line_idx in scroll_offs..self.tracker.borrow().lines {
                 if rows_shown_count > max_rows {
                     break;
                 }
 
                 let cursor_is_here =
-                        self.cur_line_idx   == line_idx
+                        self.cur_line_idx  == line_idx
                      && self.cur_track_idx == track_idx;
                 let beat = (line_idx % self.tracker.borrow().lpb) == 0;
 
                 if    track_line_pointer < track.data.len()
                    && track.data[track_line_pointer].0 == line_idx {
 
-                    cc += 1;
                     view.draw_track_cell(
+                        ctx,
+                        scroll_offs,
                         line_idx, track_idx, cursor_is_here, beat,
                         Some(track.data[track_line_pointer].1),
                         track.data[track_line_pointer].2);
 
                     track_line_pointer += 1;
                 } else {
-                    cc += 1;
                     view.draw_track_cell(
+                        ctx,
+                        scroll_offs,
                         line_idx, track_idx, cursor_is_here, beat,
                         None, Interpolation::Empty);
                 }
@@ -181,9 +188,9 @@ impl TrackerEditor {
                 rows_shown_count += 1;
             }
 
-            view.end_track();
+            view.end_track(ctx);
         }
-        view.end_drawing();
+        view.end_drawing(ctx);
         self.redraw_flag = false;
     }
 
@@ -193,8 +200,6 @@ impl TrackerEditor {
         self.redraw_flag = true;
 
         match input {
-            TrackerInput::Escape => {
-            },
             TrackerInput::Enter => {
                 // parse self.cur_input_nr to float and enter into current row.
             },
@@ -347,6 +352,8 @@ impl Track {
         } else {
             self.data.push((line, value, int.unwrap_or(Interpolation::Lerp)));
         }
+
+        self.play_pos = PlayPos::Desync;
     }
 
     // optimize finsind pos:
@@ -354,7 +361,7 @@ impl Track {
     fn check_sync(&mut self, line: usize) {
         if self.play_pos == PlayPos::Desync {
             let entry = self.data.iter().enumerate().find(|v| (v.1).0 >= line);
-            if let Some((idx, val)) = entry {
+            if let Some((idx, _val)) = entry {
                 self.play_pos = PlayPos::At(idx);
             }
         }
@@ -396,6 +403,10 @@ impl Track {
     /// Only works if the interpolation was initialized with self.play_line()!
     fn get_value(&mut self, line: usize) -> f32 {
         let i = &mut self.interpol;
+
+        if line < i.line_a {
+            i.clear();
+        }
 
         let mut diff = i.line_b - i.line_a;
         if diff == 0 { diff = 1; }

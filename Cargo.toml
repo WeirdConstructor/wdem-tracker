@@ -12,6 +12,9 @@ vecmath            = "1.0.0"
 nalgebra           = "0.18.0"
 mint               = "0.5.1"
 
+[profile.dev]
+opt-level = 1
+
 #[dependencies.sdl2]
 #version="0.32"
 #default-features=false
