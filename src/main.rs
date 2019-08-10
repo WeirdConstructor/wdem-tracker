@@ -217,7 +217,7 @@ impl TrackerEditorView<Context> for Painter {
         }
     }
 
-    fn end_drawing(&mut self, ctx: &mut Context) {
+    fn end_drawing(&mut self, _ctx: &mut Context) {
     }
 }
 
@@ -242,22 +242,117 @@ impl TrackerEditorView<Context> for Painter {
 //    }
 //}
 
+struct Output {
+    values: Vec<f32>,
+    pos:    i32,
+}
+
+impl tracker::OutputHandler for Output {
+    fn emit_event(&mut self, track_idx: usize, val: f32) {
+        //d// println!("EMIT: {}: {}", track_idx, val);
+    }
+
+    fn emit_play_line(&mut self, play_line: i32) {
+        self.pos = play_line;
+    }
+
+    fn value_buffer(&mut self) -> &mut Vec<f32> {
+        return &mut self.values;
+    }
+}
+
+fn start_tracker_thread(ext_out: std::sync::Arc<std::sync::Mutex<Output>>, rcv: std::sync::mpsc::Receiver<TrackerSyncMsg>) {
+    std::thread::spawn(move || {
+        let mut o = Output { values: Vec::new(), pos: 0 };
+        let mut t = Tracker::new(tracker::TrackerNopSync { });
+
+        let mut is_playing = true;
+        loop {
+            let r = rcv.try_recv();
+            match r {
+                Ok(TrackerSyncMsg::AddTrack(track)) => {
+                    t.add_track(&track.name, track.data);
+                    println!("THRD: TRACK ADD TRACK");
+                },
+                Ok(TrackerSyncMsg::SetInt(track_idx, line, int)) => {
+                    t.set_int(track_idx, line, int);
+                    println!("THRD: SET VAL");
+                },
+                Ok(TrackerSyncMsg::SetValue(track_idx, line, v)) => {
+                    t.set_value(track_idx, line, v);
+                    println!("THRD: SET VAL");
+                },
+                Ok(TrackerSyncMsg::RemoveValue(track_idx, line)) => {
+                    t.remove_value(track_idx, line);
+                    println!("THRD: REMO VAL");
+                },
+                Ok(TrackerSyncMsg::Play) => {
+                    is_playing = true;
+                },
+                Ok(TrackerSyncMsg::Pause) => {
+                    is_playing = false;
+                },
+                Ok(TrackerSyncMsg::Restart) => {
+                    t.reset_pos();
+                    is_playing = true;
+                },
+                Err(std::sync::mpsc::TryRecvError::Empty) => (),
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => return (),
+            }
+
+            if is_playing {
+                t.tick(&mut o);
+                //d// println!("THRD: TICK {}", o.pos);
+            }
+
+            if let Ok(ref mut m) = ext_out.try_lock() {
+                m.pos = o.pos;
+                if m.values.len() != o.values.len() {
+                    m.values.resize(o.values.len(), 0.0);
+                }
+                for (i, v) in o.values.iter().enumerate() {
+                   m.values[i] = *v;
+                }
+            }
+
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+    });
+}
+
+#[derive(Debug, Clone)]
+enum TrackerSyncMsg {
+    AddTrack(Track),
+    SetValue(usize, usize, f32),
+    SetInt(usize, usize, Interpolation),
+    RemoveValue(usize, usize),
+    Play,
+    Pause,
+    Restart,
+}
+
 struct ThreadTrackSync {
+    send: std::sync::mpsc::Sender<TrackerSyncMsg>,
 }
 
 impl ThreadTrackSync {
-    fn new() -> Self {
-        ThreadTrackSync { }
+    fn new(send: std::sync::mpsc::Sender<TrackerSyncMsg>) -> Self {
+        ThreadTrackSync { send }
     }
 }
 
 impl tracker::TrackerSync for ThreadTrackSync {
     fn add_track(&mut self, t: Track) {
+        self.send.send(TrackerSyncMsg::AddTrack(t));
     }
-    fn set_value(&mut self, track_idx: usize, line: usize,
-                     value: f32, int: Option<Interpolation>) {
+    fn set_int(&mut self, track_idx: usize, line: usize, int: Interpolation) {
+        self.send.send(TrackerSyncMsg::SetInt(track_idx, line, int));
+    }
+    fn set_value(&mut self, track_idx: usize, line: usize, value: f32) {
+        self.send.send(TrackerSyncMsg::SetValue(track_idx, line, value));
     }
     fn remove_value(&mut self, track_idx: usize, line: usize) {
+        self.send.send(TrackerSyncMsg::RemoveValue(track_idx, line));
     }
 }
 
@@ -270,17 +365,25 @@ struct WDemTrackerGUI {
     editor:  TrackerEditor<ThreadTrackSync>,
     painter: Rc<RefCell<Painter>>,
     force_redraw: bool,
+    tracker_thread_out: std::sync::Arc<std::sync::Mutex<Output>>,
     i: i32,
 }
 
 impl WDemTrackerGUI {
     pub fn new(ctx: &mut Context) -> WDemTrackerGUI {
-        let sync = ThreadTrackSync::new();
+        let (sync_tx, sync_rx) = std::sync::mpsc::channel::<TrackerSyncMsg>();
+
+        let sync = ThreadTrackSync::new(sync_tx);
+        let out = std::sync::Arc::new(std::sync::Mutex::new(Output { values: Vec::new(), pos: 0 }));
+
+        start_tracker_thread(out.clone(), sync_rx);
+
         let font = graphics::Font::new(ctx, "/DejaVuSansMono.ttf").unwrap();
         let trk = Rc::new(RefCell::new(Tracker::new(sync)));
         WDemTrackerGUI {
             tracker: trk.clone(),
             editor: TrackerEditor::new(trk),
+            tracker_thread_out: out,
             painter: Rc::new(RefCell::new(Painter {
                 text_cache: std::collections::HashMap::new(),
                 reg_view_font: font,
@@ -294,13 +397,13 @@ impl WDemTrackerGUI {
     }
 
     pub fn init(&mut self) {
-        for i in 0..20 {
+        for i in 0..1 {
             self.tracker.borrow_mut().add_track(
                 &format!("xxx{}", i),
                 vec![
-                    (0, 1.0, Interpolation::Lerp),
-                    (4, 4.0, Interpolation::Lerp),
-                    (5, 0.2, Interpolation::Lerp),
+                    (0, 1.0, Interpolation::Step),
+                    (4, 4.0, Interpolation::Step),
+                    (5, 0.2, Interpolation::Step),
                 ]);
         }
     }
@@ -374,21 +477,26 @@ impl EventHandler for WDemTrackerGUI {
 
         let _now_time = ggez::timer::time_since_start(ctx).as_millis();
 
-        let mut ov = OutputValues { values: Vec::new() };
+        //d// let mut ov = OutputValues { values: Vec::new() };
 
-        self.editor.tracker.borrow_mut().tick(&mut ov);
+        //d// self.editor.tracker.borrow_mut().tick(&mut ov);
 //        if !ov.values.is_empty() {
 //            println!("OUT: {:?}", ov.values[0]);
 //        }
 
+        // println!("THREAD POS: {}", self.tracker_thread_out.lock().unwrap().pos);
+
         self.force_redraw = true;
         if self.force_redraw || self.editor.need_redraw() {
             graphics::clear(ctx, graphics::BLACK);
-            self.painter.borrow_mut().play_pos_row = self.editor.tracker.borrow().play_line;
+            self.painter.borrow_mut().play_pos_row = self.tracker_thread_out.lock().unwrap().pos;
             self.force_redraw = false;
             self.editor.show_state(2, 40, &mut *self.painter.borrow_mut(), ctx);
             self.painter.borrow_mut().finish_draw_text(ctx);
         }
+
+        println!("O: {:?}", self.tracker_thread_out.lock().unwrap().values);
+
 //        let scale_size = 300.0;
 //        {
 //            let mut p = Painter { ctx, cur_reg_line: 0, reg_view_font: &self.debug_font };

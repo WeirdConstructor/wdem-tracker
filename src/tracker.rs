@@ -30,10 +30,23 @@ pub trait TrackerSync {
     fn add_track(&mut self, t: Track);
     /// Called by Tracker when a value in a specific track and line
     /// is added.
-    fn set_value(&mut self, track_idx: usize, line: usize,
-                     value: f32, int: Option<Interpolation>);
+    fn set_value(&mut self, track_idx: usize, line: usize, value: f32);
+    /// Called by Tracker when an interpolation for a value should be set.
+    /// Does nothing if no value at that position exists.
+    fn set_int(&mut self, track_idx: usize, line: usize, int: Interpolation);
     /// Called by Tracker when a value is removed from a track.
     fn remove_value(&mut self, track_idx: usize, line: usize);
+}
+
+/// This is a Tracker synchronizer that does nothing.
+/// Use it if you don't want to or not need to sync.
+pub struct TrackerNopSync { }
+
+impl TrackerSync for TrackerNopSync {
+    fn add_track(&mut self, _t: Track) { }
+    fn set_value(&mut self, _track_idx: usize, _line: usize, _value: f32) { }
+    fn set_int(&mut self, _track_idx: usize, _line: usize, _int: Interpolation) { }
+    fn remove_value(&mut self, _track_idx: usize, _line: usize) { }
 }
 
 /// This structure stores the state of a tracker.
@@ -77,16 +90,22 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
         self.tracks.push(t);
     }
 
+    pub fn reset_pos(&mut self) {
+        self.tick_count = 0;
+        self.play_line  = -1;
+    }
+
     pub fn tick<T>(&mut self, output: &mut T)
         where T: OutputHandler {
 
         self.tick_count += 1;
-        let new_play_line = self.tick_count / self.tpl;
+        let mut new_play_line = self.tick_count / self.tpl;
 
         if new_play_line >= self.lines {
-            self.tick_count = 0;
+            new_play_line = 0;
+            self.tick_count = 1;
             self.play_line = -1;
-            return;
+            self.resync_tracks();
         }
 
         if new_play_line as i32 > self.play_line {
@@ -114,10 +133,18 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
         }
     }
 
-    pub fn set_value(&mut self, track_idx: usize, line: usize,
-                     value: f32, int: Option<Interpolation>) {
-        self.sync.set_value(track_idx, line, value, int);
-        self.tracks[track_idx].set_value(line, value, int);
+    pub fn set_int(&mut self, track_idx: usize, line: usize, int: Interpolation) {
+        self.sync.set_int(track_idx, line, int);
+        self.tracks[track_idx].set_int(line, int);
+    }
+
+    pub fn set_value(&mut self, track_idx: usize, line: usize, value: f32) {
+        self.sync.set_value(track_idx, line, value);
+        self.tracks[track_idx].set_value(line, value);
+    }
+
+    fn resync_tracks(&mut self) {
+        for t in self.tracks.iter_mut() { t.desync(); }
     }
 
     pub fn remove_value(&mut self, track_idx: usize, line: usize) {
@@ -308,8 +335,7 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
                 .set_value(
                     self.cur_track_idx,
                     self.cur_line_idx,
-                    self.cur_input_nr.parse::<f32>().unwrap_or(0.0),
-                    None);
+                    self.cur_input_nr.parse::<f32>().unwrap_or(0.0));
         } else {
             self.cur_input_nr = String::from("");
         }
@@ -413,21 +439,25 @@ impl Track {
         }
     }
 
-    fn set_value(&mut self, line: usize, value: f32, int: Option<Interpolation>) {
+    fn set_int(&mut self, line: usize, int: Interpolation) {
+        let entry = self.data.iter_mut().find(|v| v.0 == line);
+        if let Some(val) = entry {
+            val.2 = int;
+        }
+
+        self.desync();
+    }
+
+    fn set_value(&mut self, line: usize, value: f32) {
         let entry = self.data.iter().enumerate().find(|v| (v.1).0 >= line);
         if let Some((idx, val)) = entry {
             if val.0 == line {
-                if int.is_none() {
-                    self.data[idx] = (line, value, val.2);
-                } else {
-                    self.data[idx] = (line, value, int.unwrap());
-                }
+                self.data[idx] = (line, value, Interpolation::Step);
             } else {
-                self.data.insert(
-                    idx, (line, value, int.unwrap_or(Interpolation::Lerp)));
+                self.data.insert(idx, (line, value, Interpolation::Step));
             }
         } else {
-            self.data.push((line, value, int.unwrap_or(Interpolation::Lerp)));
+            self.data.push((line, value, Interpolation::Step));
         }
 
         self.desync();
@@ -473,7 +503,7 @@ impl Track {
         }
     }
 
-    fn check_sync(&mut self, line: usize, end_line: usize) {
+    fn check_sync(&mut self, line: usize, _end_line: usize) {
         if self.play_pos == PlayPos::Desync {
             let entry = self.data.iter().enumerate().find(|v| (v.1).0 >= line);
             if let Some((idx, _val)) = entry {
