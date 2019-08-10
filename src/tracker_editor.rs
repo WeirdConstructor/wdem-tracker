@@ -57,9 +57,6 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
     pub fn need_redraw(&self) -> bool { self.redraw_flag }
 
     pub fn show_state<T, C>(&mut self, scroll_offs: usize, max_rows: usize, view: &mut T, ctx: &mut C) where T: TrackerEditorView<C> {
-//        if !self.redraw_flag { return; }
-//        self.redraw_flag = false;
-
         view.start_drawing(ctx);
         for (track_idx, track) in self.tracker.borrow().tracks.iter().enumerate() {
             view.start_track(ctx, track_idx, &track.name, self.cur_track_idx == track_idx);
@@ -108,6 +105,7 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
             view.end_track(ctx);
         }
         view.end_drawing(ctx);
+
         self.redraw_flag = false;
     }
 
@@ -195,4 +193,3 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
         }
     }
 }
-
