@@ -1,5 +1,8 @@
 use std::rc::Rc;
 use std::cell::RefCell;
+use serde::Serialize;
+use serde::Deserialize;
+extern crate serde_json;
 
 /// This trait handles the output of a Tracker when being driven
 /// by the tick() method. It generates events for starting notes
@@ -391,7 +394,7 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Interpolation {
     Empty,
     Step,
@@ -400,11 +403,19 @@ pub enum Interpolation {
     Exp,
 }
 
+impl std::default::Default for Interpolation {
+    fn default() -> Self { Interpolation::Empty }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 enum PlayPos {
     Desync,
     End,
     At(usize),
+}
+
+impl std::default::Default for PlayPos {
+    fn default() -> Self { PlayPos::Desync }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -415,6 +426,10 @@ struct InterpolationState {
     val_b:  f32,
     int:    Interpolation,
     desync: bool,
+}
+
+impl std::default::Default for InterpolationState {
+    fn default() -> Self { InterpolationState::new() }
 }
 
 impl InterpolationState {
@@ -455,10 +470,12 @@ impl InterpolationState {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Track {
     pub name: String,
+    #[serde(skip)]
     play_pos: PlayPos,
+    #[serde(skip)]
     interpol: InterpolationState,
     // if index is at or above desired key, interpolate
     // else set index = 0 and restart search for right key
@@ -473,6 +490,12 @@ impl Track {
             interpol: InterpolationState::new(),
             data,
         }
+    }
+
+    fn read_from_file(filename: &str) -> Self {
+    }
+
+    fn write_to_file(prefix: &str) {
     }
 
     fn desync(&mut self) {

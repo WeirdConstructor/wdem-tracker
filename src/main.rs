@@ -2,66 +2,17 @@ use std::rc::Rc;
 use std::cell::RefCell;
 mod tracker;
 use tracker::*;
-
-/*
-
-modules:
-
-Frontend
-    number input
-    navigation
-    cursor management
-    rendering
-    undo/redo
-
-Piece struct
-    provides file save/loading
-    track parameter setting (lpb, ticks, ...)
-    song length
-
-Track struct
-    track name
-    track type (note vs. automation)
-    provides saving/loading
-    provides undo/redo
-
-Backend trait
-    feedback of play position
-    signal data output
-
-
-//Track Signal Path GUI
-//    basic component drawing
-//    component selection/addition/removal
-//    bind components to names
-//    draw parameter collections
-//    parameters implicitly named: <track name>/<component name>/<parameter name>
-//
-//Component trait
-//    name set/get
-//    parameter list set/get
-
-
-
-
-
-*/
+extern crate serde_json;
 
 use ggez::{Context, ContextBuilder, GameResult};
 use ggez::event::{self, EventHandler, quit};
 use ggez::graphics;
 use ggez::input::keyboard::{KeyCode, KeyMods};
 
-struct TrackerViewContext {
-    
-}
-
 struct Painter {
     reg_view_font: graphics::Font,
-    cur_reg_line: usize,
-    tvc: TrackerViewContext,
-    play_pos_row: i32,
     text_cache: std::collections::HashMap<String, graphics::Text>,
+    play_pos_row: i32,
 }
 
 impl Painter {
@@ -90,7 +41,6 @@ impl Painter {
         let txt_elem = if let Some(t) = txt {
             t
         } else {
-            //d// println!("NEW TEXT {}", text);
             let t = graphics::Text::new((text.clone(), self.reg_view_font, size));
             self.text_cache.insert(text.clone(), t);
             self.text_cache.get(&text).unwrap()
@@ -98,10 +48,6 @@ impl Painter {
 
         graphics::queue_text(
             ctx, txt_elem, pos, Some(color.into()));
-
-//        graphics::draw(
-//            ctx, txt_elem,
-//            (pos, 0.0, [0.0, 0.0], color.into())).unwrap();
     }
 
     fn finish_draw_text(&mut self, ctx: &mut Context) {
@@ -220,27 +166,6 @@ impl TrackerEditorView<Context> for Painter {
     fn end_drawing(&mut self, _ctx: &mut Context) {
     }
 }
-
-//impl<'a> signals::RegisterView for Painter<'a> {
-//    fn start_print_registers(&mut self) {
-//        self.cur_reg_line = 0;
-//    }
-//
-//    fn print_register(&mut self, name: &str, value: f32) {
-//        let sz = graphics::drawable_size(self.ctx);
-//        let font_size = 20.0;
-//        self.draw_text(
-//            [-(sz.0 / 2.0),
-//             -(sz.1 / 2.0)
-//             + self.cur_reg_line as f32 * (font_size + 1.0)],
-//            font_size,
-//            format!("{:<10} = {}", name, value));
-//        self.cur_reg_line += 1;
-//    }
-//
-//    fn end_print_registers(&mut self) {
-//    }
-//}
 
 struct Output {
     values: Vec<f32>,
@@ -406,8 +331,6 @@ impl WDemTrackerGUI {
             painter: Rc::new(RefCell::new(Painter {
                 text_cache: std::collections::HashMap::new(),
                 reg_view_font: font,
-                cur_reg_line: 0,
-                tvc: TrackerViewContext { },
                 play_pos_row: 0,
             })),
             force_redraw: true,
@@ -528,13 +451,6 @@ impl EventHandler for WDemTrackerGUI {
 
         println!("O: {:?}", self.tracker_thread_out.lock().unwrap().values);
         //d// println!("POS: {:?}", self.tracker_thread_out.lock().unwrap().pos);
-
-//        let scale_size = 300.0;
-//        {
-//            let mut p = Painter { ctx, cur_reg_line: 0, reg_view_font: &self.debug_font };
-//            self.wlctx.one_step(now_time as i64, scale_size, &mut p);
-//            self.wlctx.show_debug_registers(&mut p);
-//        }
 
         graphics::present(ctx)
     }
