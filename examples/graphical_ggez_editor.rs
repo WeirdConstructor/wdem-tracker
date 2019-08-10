@@ -1,15 +1,10 @@
-mod tracker;
-mod track;
-mod tracker_editor;
-
-use crate::track::*;
-use crate::tracker::*;
-use crate::tracker_editor::*;
+extern crate serde_json;
+use wdem_tracker::track::*;
+use wdem_tracker::tracker::*;
+use wdem_tracker::tracker_editor::*;
 
 use std::rc::Rc;
 use std::cell::RefCell;
-use tracker::*;
-extern crate serde_json;
 
 use ggez::{Context, ContextBuilder, GameResult};
 use ggez::event::{self, EventHandler, quit};
@@ -179,7 +174,7 @@ struct Output {
     pos:    i32,
 }
 
-impl tracker::OutputHandler for Output {
+impl OutputHandler for Output {
     fn emit_event(&mut self, track_idx: usize, val: f32) {
         //d// println!("EMIT: {}: {}", track_idx, val);
     }
@@ -197,7 +192,7 @@ impl tracker::OutputHandler for Output {
 fn start_tracker_thread(ext_out: std::sync::Arc<std::sync::Mutex<Output>>, rcv: std::sync::mpsc::Receiver<TrackerSyncMsg>) {
     std::thread::spawn(move || {
         let mut o = Output { values: Vec::new(), pos: 0 };
-        let mut t = Tracker::new(tracker::TrackerNopSync { });
+        let mut t = Tracker::new(TrackerNopSync { });
 
         let mut is_playing = true;
         let mut out_updated = false;
@@ -289,7 +284,7 @@ impl ThreadTrackSync {
     }
 }
 
-impl tracker::TrackerSync for ThreadTrackSync {
+impl TrackerSync for ThreadTrackSync {
     fn add_track(&mut self, t: Track) {
         self.send.send(TrackerSyncMsg::AddTrack(t));
     }
@@ -359,7 +354,7 @@ impl WDemTrackerGUI {
     }
 }
 
-impl tracker::OutputHandler for OutputValues {
+impl OutputHandler for OutputValues {
     fn emit_event(&mut self, track_idx: usize, val: f32) {
         println!("EMIT: {}: {}", track_idx, val);
     }
