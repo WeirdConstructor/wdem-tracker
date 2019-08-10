@@ -253,6 +253,7 @@ impl tracker::OutputHandler for Output {
     }
 
     fn emit_play_line(&mut self, play_line: i32) {
+        //d// println!("EMIT PLAYLINE OUT {}", play_line);
         self.pos = play_line;
     }
 
@@ -267,6 +268,7 @@ fn start_tracker_thread(ext_out: std::sync::Arc<std::sync::Mutex<Output>>, rcv: 
         let mut t = Tracker::new(tracker::TrackerNopSync { });
 
         let mut is_playing = true;
+        let mut out_updated = false;
         loop {
             let r = rcv.try_recv();
             match r {
@@ -286,15 +288,31 @@ fn start_tracker_thread(ext_out: std::sync::Arc<std::sync::Mutex<Output>>, rcv: 
                     t.remove_value(track_idx, line);
                     println!("THRD: REMO VAL");
                 },
-                Ok(TrackerSyncMsg::Play) => {
-                    is_playing = true;
-                },
-                Ok(TrackerSyncMsg::Pause) => {
-                    is_playing = false;
-                },
-                Ok(TrackerSyncMsg::Restart) => {
-                    t.reset_pos();
-                    is_playing = true;
+                Ok(TrackerSyncMsg::PlayHead(a)) => {
+                    match a {
+                        PlayHeadAction::TogglePause => {
+                            is_playing = !is_playing;
+                        },
+                        PlayHeadAction::Pause    => { is_playing = false; },
+                        PlayHeadAction::Play     => { is_playing = true; },
+                        PlayHeadAction::NextLine => {
+                            println!("NEXT LINE");
+                            t.tick_to_next_line(&mut o);
+                            out_updated = true;
+                            is_playing = false;
+                        },
+                        PlayHeadAction::PrevLine => {
+                            println!("PREV LINE");
+                            t.tick_to_prev_line(&mut o);
+                            out_updated = true;
+                            is_playing = false;
+                        },
+                        PlayHeadAction::Restart  => {
+                            t.reset_pos();
+                            is_playing = true;
+                        },
+                        _ => (),
+                    }
                 },
                 Err(std::sync::mpsc::TryRecvError::Empty) => (),
                 Err(std::sync::mpsc::TryRecvError::Disconnected) => return (),
@@ -302,7 +320,12 @@ fn start_tracker_thread(ext_out: std::sync::Arc<std::sync::Mutex<Output>>, rcv: 
 
             if is_playing {
                 t.tick(&mut o);
+                out_updated = true;
                 //d// println!("THRD: TICK {}", o.pos);
+            }
+
+            if out_updated {
+                out_updated = false;
 
                 if let Ok(ref mut m) = ext_out.try_lock() {
                     m.pos = o.pos;
@@ -321,9 +344,7 @@ enum TrackerSyncMsg {
     SetValue(usize, usize, f32),
     SetInt(usize, usize, Interpolation),
     RemoveValue(usize, usize),
-    Play,
-    Pause,
-    Restart,
+    PlayHead(PlayHeadAction),
 }
 
 struct ThreadTrackSync {
@@ -348,6 +369,9 @@ impl tracker::TrackerSync for ThreadTrackSync {
     }
     fn remove_value(&mut self, track_idx: usize, line: usize) {
         self.send.send(TrackerSyncMsg::RemoveValue(track_idx, line));
+    }
+    fn play_head(&mut self, act: PlayHeadAction) {
+        self.send.send(TrackerSyncMsg::PlayHead(act));
     }
 }
 
@@ -443,8 +467,20 @@ impl EventHandler for WDemTrackerGUI {
                 KeyCode::L => {
                     self.editor.process_input(TrackerInput::TrackRight);
                 },
+                KeyCode::Space => {
+                    self.editor.process_input(
+                        TrackerInput::PlayHead(PlayHeadAction::TogglePause));
+                },
+                KeyCode::N => {
+                    self.editor.process_input(
+                        TrackerInput::PlayHead(PlayHeadAction::PrevLine));
+                },
+                KeyCode::M => {
+                    self.editor.process_input(
+                        TrackerInput::PlayHead(PlayHeadAction::NextLine));
+                },
                 _ => {
-                    //d// println!("KEY: {:?}", keycode);
+                    println!("KEY: {:?}", keycode);
                 }
             }
         }

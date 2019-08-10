@@ -36,6 +36,8 @@ pub trait TrackerSync {
     fn set_int(&mut self, track_idx: usize, line: usize, int: Interpolation);
     /// Called by Tracker when a value is removed from a track.
     fn remove_value(&mut self, track_idx: usize, line: usize);
+    /// Called when the tracker should change the play head state:
+    fn play_head(&mut self, _act: PlayHeadAction) { }
 }
 
 /// This is a Tracker synchronizer that does nothing.
@@ -47,6 +49,7 @@ impl TrackerSync for TrackerNopSync {
     fn set_value(&mut self, _track_idx: usize, _line: usize, _value: f32) { }
     fn set_int(&mut self, _track_idx: usize, _line: usize, _int: Interpolation) { }
     fn remove_value(&mut self, _track_idx: usize, _line: usize) { }
+    fn play_head(&mut self, _act: PlayHeadAction) { }
 }
 
 /// This structure stores the state of a tracker.
@@ -93,12 +96,37 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
     pub fn reset_pos(&mut self) {
         self.tick_count = 0;
         self.play_line  = -1;
+        self.resync_tracks();
     }
 
-    pub fn tick<T>(&mut self, output: &mut T)
+    pub fn tick_to_prev_line<T>(&mut self, output: &mut T)
         where T: OutputHandler {
 
-        self.tick_count += 1;
+        if self.play_line > 0 {
+            self.tick_count =
+                ((self.play_line - 1) * self.tpl as i32) as usize;
+        };
+
+        self.resync_tracks();
+        self.handle_tick_count_change(output);
+    }
+
+    pub fn tick_to_next_line<T>(&mut self, output: &mut T)
+        where T: OutputHandler {
+
+        self.tick_count =
+            if self.play_line < 0 {
+                self.tpl as usize
+            } else {
+                ((self.play_line + 1) * self.tpl as i32) as usize
+            };
+
+        self.handle_tick_count_change(output);
+    }
+
+    pub fn handle_tick_count_change<T>(&mut self, output: &mut T)
+        where T: OutputHandler {
+
         let mut new_play_line = self.tick_count / self.tpl;
 
         if new_play_line >= self.lines {
@@ -108,8 +136,8 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
             self.resync_tracks();
         }
 
-        if new_play_line as i32 > self.play_line {
-            output.emit_play_line(self.play_line);
+        if new_play_line as i32 != self.play_line {
+            output.emit_play_line(new_play_line as i32);
 
             for (track_idx, t) in self.tracks.iter_mut().enumerate() {
                 let e = t.play_line(new_play_line, self.lines);
@@ -131,6 +159,13 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
         for (idx, t) in self.tracks.iter_mut().enumerate() {
             buf[idx] = t.get_value(new_play_line);
         }
+    }
+
+    pub fn tick<T>(&mut self, output: &mut T)
+        where T: OutputHandler {
+
+        self.tick_count += 1;
+        self.handle_tick_count_change(output);
     }
 
     pub fn set_int(&mut self, track_idx: usize, line: usize, int: Interpolation) {
@@ -162,6 +197,16 @@ pub struct TrackerEditor<SYNC> where SYNC: TrackerSync {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
+pub enum PlayHeadAction {
+    TogglePause,
+    Pause,
+    Play,
+    Restart,
+    NextLine,
+    PrevLine,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum TrackerInput {
     Enter,
     Delete,
@@ -174,6 +219,7 @@ pub enum TrackerInput {
     RowUp,
     TrackLeft,
     TrackRight,
+    PlayHead(PlayHeadAction),
 }
 
 pub trait TrackerEditorView<C> {
@@ -303,6 +349,9 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
             },
             TrackerInput::TrackRight => {
                 self.cur_track_idx += 1;
+            },
+            TrackerInput::PlayHead(a) => {
+                self.tracker.borrow_mut().sync.play_head(a);
             },
             TrackerInput::SetInterpStep => {
                 // set interp mode of cur row to *
