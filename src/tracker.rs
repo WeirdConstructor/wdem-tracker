@@ -492,10 +492,32 @@ impl Track {
         }
     }
 
-    fn read_from_file(filename: &str) -> Self {
+    fn read_from_file(filename: &str) -> std::io::Result<Self> {
+        let s = std::fs::read_to_string(filename)?;
+        Ok(serde_json::from_str(&s).unwrap_or(Track {
+            name: String::from("parseerr"),
+            play_pos: PlayPos::Desync,
+            interpol: InterpolationState::new(),
+            data: Vec::new(),
+        }))
     }
 
-    fn write_to_file(prefix: &str) {
+    fn write_to_file(&self, prefix: &str) -> Result<(), String> {
+        use std::io::Write;
+
+        let mut f =
+            std::fs::File::create(String::from(prefix) + &self.name + "~")
+            .map_err(|e| format!("write track to file io create error: {}", e))?;
+
+        match serde_json::to_string(&self) {
+            Ok(s) => {
+                f.write_all(s.as_bytes())
+                 .map_err(|e| format!("write track to file io error: {}", e))
+            },
+            Err(e) => {
+                Err(format!("write track to file serialize error: {}", e))
+            }
+        }
     }
 
     fn desync(&mut self) {
