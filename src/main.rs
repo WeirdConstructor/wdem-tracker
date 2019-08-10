@@ -303,15 +303,10 @@ fn start_tracker_thread(ext_out: std::sync::Arc<std::sync::Mutex<Output>>, rcv: 
             if is_playing {
                 t.tick(&mut o);
                 //d// println!("THRD: TICK {}", o.pos);
-            }
 
-            if let Ok(ref mut m) = ext_out.try_lock() {
-                m.pos = o.pos;
-                if m.values.len() != o.values.len() {
-                    m.values.resize(o.values.len(), 0.0);
-                }
-                for (i, v) in o.values.iter().enumerate() {
-                   m.values[i] = *v;
+                if let Ok(ref mut m) = ext_out.try_lock() {
+                    m.pos = o.pos;
+                    o.values = std::mem::replace(&mut m.values, o.values);
                 }
             }
 
@@ -496,6 +491,7 @@ impl EventHandler for WDemTrackerGUI {
         }
 
         println!("O: {:?}", self.tracker_thread_out.lock().unwrap().values);
+        //d// println!("POS: {:?}", self.tracker_thread_out.lock().unwrap().pos);
 
 //        let scale_size = 300.0;
 //        {
