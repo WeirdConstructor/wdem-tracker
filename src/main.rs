@@ -1,6 +1,13 @@
+mod tracker;
+mod track;
+mod tracker_editor;
+
+use crate::track::*;
+use crate::tracker::*;
+use crate::tracker_editor::*;
+
 use std::rc::Rc;
 use std::cell::RefCell;
-mod tracker;
 use tracker::*;
 extern crate serde_json;
 
@@ -198,7 +205,7 @@ fn start_tracker_thread(ext_out: std::sync::Arc<std::sync::Mutex<Output>>, rcv: 
             let r = rcv.try_recv();
             match r {
                 Ok(TrackerSyncMsg::AddTrack(track)) => {
-                    t.add_track(&track.name, track.data);
+                    t.add_track(Track::new(&track.name, track.data));
                     println!("THRD: TRACK ADD TRACK");
                 },
                 Ok(TrackerSyncMsg::SetInt(track_idx, line, int)) => {
@@ -341,12 +348,13 @@ impl WDemTrackerGUI {
     pub fn init(&mut self) {
         for i in 0..1 {
             self.tracker.borrow_mut().add_track(
-                &format!("xxx{}", i),
-                vec![
-                    (0, 1.0, Interpolation::Step),
-                    (4, 4.0, Interpolation::Step),
-                    (5, 0.2, Interpolation::Step),
-                ]);
+                Track::new(
+                    &format!("xxx{}", i),
+                    vec![
+                        (0, 1.0, Interpolation::Step),
+                        (4, 4.0, Interpolation::Step),
+                        (5, 0.2, Interpolation::Step),
+                    ]));
         }
     }
 }
