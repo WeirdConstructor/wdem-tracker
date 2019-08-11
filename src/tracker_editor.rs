@@ -8,6 +8,7 @@ pub struct TrackerEditor<SYNC> where SYNC: TrackerSync {
     cur_track_idx:  usize,
     cur_input_nr:   String,
     cur_line_idx:   usize,
+    scroll_line_offs: usize,
     redraw_flag:    bool,
 }
 
@@ -32,7 +33,7 @@ pub trait TrackerEditorView<C> {
     fn start_track(&mut self, ctx: &mut C, track_idx: usize, name: &str, cursor: bool);
     fn draw_track_cell(
         &mut self, ctx: &mut C,
-        scroll_offs: usize,
+        line_pos: usize,
         line_idx: usize,
         track_idx: usize,
         cursor: bool,
@@ -47,21 +48,36 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
     pub fn new(tracker: Rc<RefCell<Tracker<SYNC>>>) -> Self {
         TrackerEditor {
             tracker,
-            cur_track_idx: 0,
-            cur_input_nr:  String::from(""),
-            cur_line_idx:   0,
-            redraw_flag:   true,
+            scroll_line_offs:   0,
+            cur_track_idx:      0,
+            cur_input_nr:       String::from(""),
+            cur_line_idx:        0,
+            redraw_flag:        true,
+        }
+    }
+
+    fn calc_cursor_scroll(&mut self, max_rows: usize) {
+        if self.cur_line_idx >= self.tracker.borrow().lines {
+            self.cur_line_idx = self.tracker.borrow().lines - 1;
+        }
+        if self.cur_line_idx < self.scroll_line_offs {
+            self.scroll_line_offs = self.cur_line_idx;
+        }
+        if self.cur_line_idx > (self.scroll_line_offs + max_rows) {
+            self.scroll_line_offs = self.cur_line_idx - (max_rows / 2);
         }
     }
 
     pub fn need_redraw(&self) -> bool { self.redraw_flag }
 
-    pub fn show_state<T, C>(&mut self, scroll_offs: usize, max_rows: usize, view: &mut T, ctx: &mut C) where T: TrackerEditorView<C> {
+    pub fn show_state<T, C>(&mut self, max_rows: usize, view: &mut T, ctx: &mut C) where T: TrackerEditorView<C> {
+        self.calc_cursor_scroll(max_rows);
+
         view.start_drawing(ctx);
         for (track_idx, track) in self.tracker.borrow().tracks.iter().enumerate() {
             view.start_track(ctx, track_idx, &track.name, self.cur_track_idx == track_idx);
 
-            let first_data_cell = track.data.iter().enumerate().find(|v| (v.1).0 >= scroll_offs);
+            let first_data_cell = track.data.iter().enumerate().find(|v| (v.1).0 >= self.scroll_line_offs);
             let mut track_line_pointer =
                 if let Some((i, _v)) = first_data_cell {
                     i
@@ -69,8 +85,13 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
                     0
                 };
 
+            let mut max_line = self.tracker.borrow().lines;
+            if max_line > self.scroll_line_offs + max_rows {
+                max_line = self.scroll_line_offs + max_rows;
+            }
+
             let mut rows_shown_count = 0;
-            for line_idx in scroll_offs..self.tracker.borrow().lines {
+            for line_idx in self.scroll_line_offs..max_line {
                 if rows_shown_count > max_rows {
                     break;
                 }
@@ -85,7 +106,7 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
 
                     view.draw_track_cell(
                         ctx,
-                        scroll_offs,
+                        line_idx - self.scroll_line_offs,
                         line_idx, track_idx, cursor_is_here, beat,
                         Some(track.data[track_line_pointer].1),
                         track.data[track_line_pointer].2);
@@ -94,7 +115,7 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
                 } else {
                     view.draw_track_cell(
                         ctx,
-                        scroll_offs,
+                        line_idx - self.scroll_line_offs,
                         line_idx, track_idx, cursor_is_here, beat,
                         None, Interpolation::Empty);
                 }

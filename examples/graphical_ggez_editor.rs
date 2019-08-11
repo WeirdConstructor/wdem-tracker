@@ -90,7 +90,7 @@ impl TrackerEditorView<Context> for Painter {
     }
 
     fn draw_track_cell(&mut self, ctx: &mut Context,
-        scroll_offs: usize,
+        line_pos: usize,
         line_idx: usize,
         track_idx: usize,
         cursor: bool,
@@ -109,7 +109,7 @@ impl TrackerEditorView<Context> for Painter {
             + TPOS_PAD
             + track_idx as f32 * (TRACK_WIDTH + TRACK_PAD);
 
-        let txt_y = (line_idx - scroll_offs) as f32 * ROW_HEIGHT;
+        let txt_y = line_pos as f32 * ROW_HEIGHT;
 
         if track_idx == 0 {
             if line_idx as i32 == self.play_pos_row {
@@ -448,11 +448,11 @@ impl EventHandler for WDemTrackerGUI {
             graphics::clear(ctx, graphics::BLACK);
             self.painter.borrow_mut().play_pos_row = self.tracker_thread_out.lock().unwrap().pos;
             self.force_redraw = false;
-            self.editor.show_state(2, 40, &mut *self.painter.borrow_mut(), ctx);
+            self.editor.show_state(10, &mut *self.painter.borrow_mut(), ctx);
             self.painter.borrow_mut().finish_draw_text(ctx);
         }
 
-        println!("O: {:?}", self.tracker_thread_out.lock().unwrap().values);
+        //d// println!("O: {:?}", self.tracker_thread_out.lock().unwrap().values);
         //d// println!("POS: {:?}", self.tracker_thread_out.lock().unwrap().pos);
 
         graphics::present(ctx)
