@@ -17,6 +17,15 @@ use ggez::event::{self, EventHandler, quit};
 use ggez::graphics;
 use ggez::input::keyboard::{KeyCode, KeyMods};
 
+struct DummyParamSet {
+}
+
+impl ModuleParameterSet for DummyParamSet {
+    fn count(&self) -> usize { 9 }
+    fn name(&self, _idx: usize) -> String { format!("ModulA") }
+    fn range(&self, idx: usize) -> (f32, f32) { (0.0, 1.0) }
+}
+
 trait ModuleParameterSet {
     fn count(&self) -> usize;
     fn name(&self, idx: usize) -> String;
@@ -37,7 +46,7 @@ struct ModuleChain<PS> where PS: ModuleParameterSet {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-struct ParamSelection {
+struct ModuleParamSelection {
     chain_name: String,
     mod_name:   String,
     param_idx:  usize,
