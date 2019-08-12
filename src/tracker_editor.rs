@@ -11,6 +11,7 @@ pub struct TrackerEditor<SYNC> where SYNC: TrackerSync {
     cur_line_idx:   usize,
     scroll_line_offs: usize,
     redraw_flag:    bool,
+    step_size:      usize,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -22,6 +23,9 @@ pub enum TrackerInput {
     SetInterpLerp,
     SetInterpSStep,
     SetInterpExp,
+    SetStep(usize),
+    StepDown,
+    StepUp,
     RowDown,
     RowUp,
     TrackLeft,
@@ -44,6 +48,7 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
             cur_input_nr:       String::from(""),
             cur_line_idx:        0,
             redraw_flag:        true,
+            step_size:          1,
         }
     }
 
@@ -61,7 +66,7 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
 
     pub fn need_redraw(&self) -> bool { self.redraw_flag }
 
-    fn draw_track<P>(&self, painter: &mut P, track_idx: usize, cursor: bool, val: f32) where P: GUIPainter {
+    fn draw_track<P>(&self, painter: &mut P, track_idx: usize, cursor: bool, max_rows: usize, val: f32) where P: GUIPainter {
         let mut clr = [0.8, 0.8, 0.8, 1.0];
         if cursor {
             clr = [1.0, 0.7, 0.7, 1.0];
@@ -70,13 +75,13 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
         painter.draw_rect(
             clr,
             [TPOS_PAD + track_idx as f32 * (TRACK_WIDTH + TRACK_PAD), 0.0],
-            [TRACK_WIDTH, 10.0 * ROW_HEIGHT],
+            [TRACK_WIDTH, max_rows as f32 * ROW_HEIGHT],
             false,
             0.5);
         painter.draw_text(
             clr,
             [TPOS_PAD + track_idx as f32 * (TRACK_WIDTH + TRACK_PAD) + 2.0,
-             10.0 * ROW_HEIGHT + 2.0],
+             max_rows as f32 * ROW_HEIGHT + 2.0],
             0.5 * ROW_HEIGHT,
             format!("{:<6.2}", val));
     }
@@ -168,7 +173,7 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
 
         for (track_idx, track) in self.tracker.borrow().tracks.iter().enumerate() {
             let val = if values.len() > track_idx { values[track_idx] } else { 0.0 };
-            self.draw_track(painter, track_idx, self.cur_track_idx == track_idx, val);
+            self.draw_track(painter, track_idx, self.cur_track_idx == track_idx, max_rows, val);
 
             let first_data_cell = track.data.iter().enumerate().find(|v| (v.1).0 >= self.scroll_line_offs);
             let mut track_line_pointer =
@@ -253,6 +258,18 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
                         self.cur_track_idx,
                         self.cur_line_idx);
             },
+            TrackerInput::StepDown => {
+                self.cur_line_idx += self.step_size;
+            },
+            TrackerInput::StepUp => {
+                if self.cur_line_idx > 0 {
+                    if self.step_size > self.cur_line_idx {
+                        self.cur_line_idx = 0;
+                    } else {
+                        self.cur_line_idx -= self.step_size;
+                    }
+                }
+            },
             TrackerInput::RowDown => {
                 self.cur_line_idx += 1;
             },
@@ -299,6 +316,9 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
                         self.cur_track_idx,
                         self.cur_line_idx,
                         Interpolation::Exp);
+            },
+            TrackerInput::SetStep(s) => {
+                self.step_size = s;
             },
         };
 

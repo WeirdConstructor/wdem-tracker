@@ -264,6 +264,8 @@ struct WDemTrackerGUI {
     tracker_thread_out: std::sync::Arc<std::sync::Mutex<Output>>,
     i: i32,
     interp_mode: bool,
+    step: i32,
+    set_step: bool,
 }
 
 impl WDemTrackerGUI {
@@ -287,6 +289,8 @@ impl WDemTrackerGUI {
             })),
             force_redraw: true,
             interp_mode: false,
+            set_step: false,
+            step: 0,
             i: 0,
         }
     }
@@ -324,7 +328,7 @@ impl EventHandler for WDemTrackerGUI {
         Ok(())
     }
 
-    fn key_down_event(&mut self, ctx: &mut Context, keycode: KeyCode, _keymods: KeyMods, _repeat: bool) {
+    fn key_down_event(&mut self, ctx: &mut Context, keycode: KeyCode, keymods: KeyMods, _repeat: bool) {
         if keycode == KeyCode::Q {
             quit(ctx);
         } else {
@@ -341,6 +345,10 @@ impl EventHandler for WDemTrackerGUI {
                 KeyCode::L if self.interp_mode => {
                     self.editor.process_input(TrackerInput::SetInterpLerp);
                 },
+                KeyCode::S => {
+                    self.set_step = true;
+                    self.step = 0;
+                },
                 KeyCode::X => {
                     self.editor.process_input(TrackerInput::Delete);
                 },
@@ -348,10 +356,20 @@ impl EventHandler for WDemTrackerGUI {
                     self.editor.process_input(TrackerInput::TrackLeft);
                 },
                 KeyCode::J => {
-                    self.editor.process_input(TrackerInput::RowDown);
+                    match keymods {
+                        KeyMods::SHIFT => {
+                            self.editor.process_input(TrackerInput::RowDown);
+                        },
+                        _ => { self.editor.process_input(TrackerInput::StepDown); }
+                    }
                 },
                 KeyCode::K => {
-                    self.editor.process_input(TrackerInput::RowUp);
+                    match keymods {
+                        KeyMods::SHIFT => {
+                            self.editor.process_input(TrackerInput::RowUp);
+                        },
+                        _ => { self.editor.process_input(TrackerInput::StepUp); }
+                    }
                 },
                 KeyCode::L => {
                     self.editor.process_input(TrackerInput::TrackRight);
@@ -381,7 +399,28 @@ impl EventHandler for WDemTrackerGUI {
 
     fn text_input_event(&mut self, _ctx: &mut Context, character: char) {
         //d// println!("CHR: {:?}", character);
-        self.editor.process_input(TrackerInput::Character(character));
+        if !self.set_step && !self.interp_mode {
+            self.editor.process_input(TrackerInput::Character(character));
+        } else if self.set_step && character.is_digit(10) {
+            match character {
+                '0' => { self.step += 10; },
+                '1' => { self.step += 1; self.set_step = false; },
+                '2' => { self.step += 2; self.set_step = false; },
+                '3' => { self.step += 3; self.set_step = false; },
+                '4' => { self.step += 4; self.set_step = false; },
+                '5' => { self.step += 5; self.set_step = false; },
+                '6' => { self.step += 6; self.set_step = false; },
+                '7' => { self.step += 7; self.set_step = false; },
+                '8' => { self.step += 8; self.set_step = false; },
+                '9' => { self.step += 9; self.set_step = false; },
+                _ => (),
+            }
+
+            if !self.set_step {
+                self.editor.process_input(
+                    TrackerInput::SetStep(self.step as usize));
+            }
+        }
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
@@ -418,7 +457,7 @@ impl EventHandler for WDemTrackerGUI {
             self.force_redraw = false;
             let mut p : GGEZGUIPainter =
                 GGEZGUIPainter { p: self.painter.clone(), c: ctx, offs: (0.0, 0.0), area: (0.0, 0.0) };
-            self.editor.show_state(10, &mut p, play_pos_row, &val);
+            self.editor.show_state(32, &mut p, play_pos_row, &val);
 //            self.painter.borrow_mut().finish_draw_text(ctx);
         }
 

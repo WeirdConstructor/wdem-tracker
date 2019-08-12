@@ -448,7 +448,7 @@ impl EventHandler for WDemTrackerGUI {
             graphics::clear(ctx, graphics::BLACK);
             self.painter.borrow_mut().play_pos_row = self.tracker_thread_out.lock().unwrap().pos;
             self.force_redraw = false;
-            self.editor.show_state(10, &mut *self.painter.borrow_mut(), ctx);
+            self.editor.show_state(40, &mut *self.painter.borrow_mut(), ctx);
             self.painter.borrow_mut().finish_draw_text(ctx);
         }
 
