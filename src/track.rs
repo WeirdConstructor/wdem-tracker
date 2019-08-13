@@ -226,7 +226,7 @@ impl Track {
     /// Returns the interpolated value of this track at the specified line.
     /// Only works if the interpolation was
     /// initialized with self.sync_interpol_to_play_line() in self.play_line()!
-    pub fn get_value(&mut self, line: usize) -> f32 {
+    pub fn get_value(&mut self, line: usize, fract_next_line: f64) -> f32 {
         let i = &mut self.interpol;
 
         if line < i.line_a {
@@ -235,6 +235,8 @@ impl Track {
 
         let mut diff = i.line_b - i.line_a;
         if diff == 0 { diff = 1; }
+        let diff = diff as f64;
+        let line_f = line as f64 + fract_next_line;
 
         match i.int {
             Interpolation::Empty => 0.0,
@@ -246,13 +248,13 @@ impl Track {
                 }
             },
             Interpolation::Lerp => {
-                let x = ((line - i.line_a) as f64) / diff as f64;
+                let x = (line_f - (i.line_a as f64)) / diff;
                 (  i.val_a as f64 * (1.0 - x)
                  + i.val_b as f64 * x)
                 as f32
             },
             Interpolation::SStep => {
-                let x = ((line - i.line_a) as f64) / diff as f64;
+                let x = (line_f - (i.line_a as f64)) / diff;
                 let x = if x < 0.0 { 0.0 } else { x };
                 let x = if x > 1.0 { 1.0 } else { x };
                 let x = x * x * (3.0 - 2.0 * x);
@@ -262,7 +264,7 @@ impl Track {
                 as f32
             },
             Interpolation::Exp => {
-                let x = ((line - i.line_a) as f64) / diff as f64;
+                let x = (line_f - (i.line_a as f64)) / diff;
                 let x = x * x;
 
                 (  i.val_a as f64 * (1.0 - x)

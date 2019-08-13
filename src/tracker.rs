@@ -142,6 +142,9 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
         where T: OutputHandler {
 
         let mut new_play_line = self.tick_count / self.tpl;
+        let fract_ticks =
+            ((self.tick_count - (new_play_line * self.tpl)) as f64)
+            / self.tpl as f64;
 
         if new_play_line >= self.lines {
             new_play_line = 0;
@@ -171,7 +174,7 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
         }
 
         for (idx, t) in self.tracks.iter_mut().enumerate() {
-            buf[idx] = t.get_value(new_play_line);
+            buf[idx] = t.get_value(new_play_line, fract_ticks);
         }
     }
 
