@@ -4,6 +4,7 @@ mod gui_painter;
 mod track;
 mod tracker;
 mod tracker_editor;
+mod signals;
 
 use wdem_tracker::track::*;
 use wdem_tracker::tracker::*;
