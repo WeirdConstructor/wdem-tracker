@@ -205,7 +205,7 @@ pub struct Simulator {
 }
 
 impl Simulator {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Simulator {
             regs:               Vec::new(),
             ops:                Vec::new(),
@@ -215,12 +215,11 @@ impl Simulator {
         }
     }
 
-    fn add_op(&mut self, idx: usize, mut op: Box<dyn DemOp>) -> Option<usize> {
+    pub fn add_op(&mut self, idx: usize, mut op: Box<dyn DemOp>) -> Option<usize> {
         let new_start_reg = self.regs.len();
-        self.scopes.resize(
-            self.regs.len() + op.output_count(),
-            Scope { samples: Vec::new() });
-        self.regs.resize(self.regs.len() + op.output_count(), 0.0);
+        let new_reg_count = self.regs.len() + op.output_count();
+        self.scopes.resize(new_reg_count, Scope::new(128));
+        self.regs.resize(new_reg_count, 0.0);
         op.init_regs(new_start_reg, &mut self.regs[..]);
         let out_reg = op.get_output_reg("out");
 
@@ -230,8 +229,8 @@ impl Simulator {
         out_reg
     }
 
-    fn new_op(&mut self, idx: usize, t: &str) -> Option<usize> {
-        let o : Box<dyn DemOp> = match t {
+    pub fn new_op(&mut self, idx: usize, t: &str) -> Option<usize> {
+        let mut o : Box<dyn DemOp> = match t {
             "sin" => { Box::new(DoSin::new()) },
             _     => { return None; },
         };
@@ -239,7 +238,7 @@ impl Simulator {
         self.add_op(idx, o)
     }
 
-    fn set_reg(&mut self, idx: usize, v: f32) -> bool {
+    pub fn set_reg(&mut self, idx: usize, v: f32) -> bool {
         if self.regs.len() > idx {
             self.regs[idx] = v;
             true
@@ -248,7 +247,7 @@ impl Simulator {
         }
     }
 
-    fn get_reg(&self, idx: usize) -> f32 {
+    pub fn get_reg(&self, idx: usize) -> f32 {
         if self.regs.len() > idx {
             self.regs[idx]
         } else {
@@ -256,14 +255,14 @@ impl Simulator {
         }
     }
 
-    fn set_op_input(&mut self, idx: usize, input_name: &str, to: OpIn) -> bool {
+    pub fn set_op_input(&mut self, idx: usize, input_name: &str, to: OpIn) -> bool {
         if idx >= self.ops.len() {
             return false;
         }
         self.ops[idx].set_input(input_name, to)
     }
 
-    fn exec(&mut self, t: f32) {
+    pub fn exec(&mut self, t: f32) {
         for r in self.ops.iter_mut() {
             r.as_mut().exec(t, &mut self.regs[..]);
         }

@@ -83,19 +83,28 @@ pub tracks:         Vec<Track>,
     sync:           SYNC,
     /// number of played ticks
     tick_count:     usize,
+    /// interval between ticks in ms
+pub tick_interval:  usize,
 }
 
 impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
     pub fn new(sync: SYNC) -> Self {
         Tracker {
-            lpb:    4, // => 4 beats are 1 `Tackt`(de)
-            tpl:    10,
-            lines:  128,
-            tracks: Vec::new(),
-            play_line: -1,
-            tick_count: 0,
+            lpb:            4, // => 4 beats are 1 `Tackt`(de)
+            tpl:            10,
+            tick_interval:  10,
+            lines:          128,
+            tracks:         Vec::new(),
+            play_line:      -1,
+            tick_count:     0,
             sync,
         }
+    }
+
+    pub fn tick2song_pos_in_s(&self) -> f32 {
+        (((self.tick_count as f64)
+          * (self.tick_interval as f64))
+         / 1000.0) as f32
     }
 
     pub fn add_track(&mut self, t: Track) {

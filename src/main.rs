@@ -151,6 +151,11 @@ impl OutputHandler for Output {
 
 fn start_tracker_thread(ext_out: std::sync::Arc<std::sync::Mutex<Output>>, rcv: std::sync::mpsc::Receiver<TrackerSyncMsg>) {
     std::thread::spawn(move || {
+
+        let mut sim = signals::Simulator::new();
+        let sin1_out_reg = sim.new_op(0, "sin").unwrap();
+        println!("SIN OUT REG : {}", sin1_out_reg);
+
         let mut o = Output { values: Vec::new(), pos: 0 };
         let mut t = Tracker::new(TrackerNopSync { });
 
@@ -211,6 +216,8 @@ fn start_tracker_thread(ext_out: std::sync::Arc<std::sync::Mutex<Output>>, rcv: 
                 //d// println!("THRD: TICK {}", o.pos);
             }
 
+            sim.exec(t.tick2song_pos_in_s());
+
             if out_updated {
                 out_updated = false;
 
@@ -220,7 +227,9 @@ fn start_tracker_thread(ext_out: std::sync::Arc<std::sync::Mutex<Output>>, rcv: 
                 }
             }
 
-            std::thread::sleep(std::time::Duration::from_millis(100));
+            println!("OUT SIN: sp[{}] {}", t.tick2song_pos_in_s(), sim.get_reg(sin1_out_reg));
+
+            std::thread::sleep(std::time::Duration::from_millis(t.tick_interval as u64));
         }
     });
 }
