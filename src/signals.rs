@@ -1,4 +1,6 @@
 use wlambda::vval::VVal;
+use crate::scopes::SampleRow;
+use crate::scopes::SCOPE_SAMPLES;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum OpIn {
@@ -183,23 +185,10 @@ impl DemOp for DoSin {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
-pub struct Scope {
-    pub samples: Vec<f32>,
-}
-
-impl Scope {
-    fn new(sample_len: usize) -> Self {
-        let mut v = Vec::new();
-        v.resize(sample_len, 0.0);
-        Scope { samples: v }
-    }
-}
-
 pub struct Simulator {
     pub regs:               Vec<f32>,
     pub ops:                Vec<Box<dyn DemOp>>,
-    pub scopes:             Vec<Scope>,
+    pub sample_row:         SampleRow,
     pub scope_sample_len:   usize,
     pub scope_sample_pos:   usize,
 }
@@ -209,16 +198,15 @@ impl Simulator {
         Simulator {
             regs:               Vec::new(),
             ops:                Vec::new(),
-            scopes:             Vec::new(),
-            scope_sample_len:   100,
-            scope_sample_pos:     0,
+            sample_row:         SampleRow::new(),
+            scope_sample_len:   SCOPE_SAMPLES,
+            scope_sample_pos:   0,
         }
     }
 
     pub fn add_op(&mut self, idx: usize, mut op: Box<dyn DemOp>) -> Option<usize> {
         let new_start_reg = self.regs.len();
         let new_reg_count = self.regs.len() + op.output_count();
-        self.scopes.resize(new_reg_count, Scope::new(128));
         self.regs.resize(new_reg_count, 0.0);
         op.init_regs(new_start_reg, &mut self.regs[..]);
         let out_reg = op.get_output_reg("out");
@@ -230,7 +218,7 @@ impl Simulator {
     }
 
     pub fn new_op(&mut self, idx: usize, t: &str) -> Option<usize> {
-        let mut o : Box<dyn DemOp> = match t {
+        let o : Box<dyn DemOp> = match t {
             "sin" => { Box::new(DoSin::new()) },
             _     => { return None; },
         };
@@ -262,17 +250,19 @@ impl Simulator {
         self.ops[idx].set_input(input_name, to)
     }
 
-    pub fn exec(&mut self, t: f32) {
+    pub fn exec(&mut self, t: f32, ext_scopes: std::sync::Arc<std::sync::Mutex<SampleRow>>) {
         for r in self.ops.iter_mut() {
             r.as_mut().exec(t, &mut self.regs[..]);
         }
 
-        for (i, s) in self.regs.iter().enumerate() {
-            self.scopes[i].samples[self.scope_sample_pos] = *s;
-        }
-
+        self.sample_row.read_from_regs(&self.regs[..], self.scope_sample_pos);
         self.scope_sample_pos =
             (self.scope_sample_pos + 1) % self.scope_sample_len;
+
+        if let Ok(ref mut m) = ext_scopes.try_lock() {
+            use std::ops::DerefMut;
+            std::mem::swap(&mut self.sample_row, &mut *m);
+        }
     }
 }
 

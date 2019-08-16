@@ -4,6 +4,7 @@ mod gui_painter;
 mod track;
 mod tracker;
 mod tracker_editor;
+mod scopes;
 mod signals;
 
 use wdem_tracker::track::*;
@@ -24,7 +25,7 @@ struct DummyParamSet {
 impl ModuleParameterSet for DummyParamSet {
     fn count(&self) -> usize { 9 }
     fn name(&self, _idx: usize) -> String { format!("ModulA") }
-    fn range(&self, idx: usize) -> (f32, f32) { (0.0, 1.0) }
+    fn range(&self, _idx: usize) -> (f32, f32) { (0.0, 1.0) }
 }
 
 trait ModuleParameterSet {
@@ -59,7 +60,24 @@ struct GGEZPainter {
 }
 
 impl GGEZPainter {
-    fn draw_rect(&mut self, ctx: &mut Context, color: [f32; 4], pos: [f32; 2], size: [f32; 2], filled: bool, thickness: f32) {
+    fn draw_lines(&mut self, ctx: &mut Context, color: [f32; 4], pos: [f32; 2],
+                  points: &[[f32; 2]], filled: bool, thickness: f32) {
+        let pl =
+            graphics::Mesh::new_polyline(
+                ctx,
+                if filled {
+                    graphics::DrawMode::fill()
+                } else {
+                    graphics::DrawMode::stroke(thickness)
+                },
+                points,
+                graphics::Color::from(color)).unwrap();
+        graphics::draw(
+            ctx, &pl, ([pos[0], pos[1]], 0.0, [0.0, 0.0], graphics::WHITE)).unwrap();
+    }
+
+    fn draw_rect(&mut self, ctx: &mut Context, color: [f32; 4], pos: [f32; 2],
+                 size: [f32; 2], filled: bool, thickness: f32) {
         let r =
             graphics::Mesh::new_rectangle(
                 ctx,
@@ -71,12 +89,7 @@ impl GGEZPainter {
                 graphics::Rect::new(0.0, 0.0, size[0], size[1]),
                 graphics::Color::from(color)).unwrap();
         graphics::draw(
-            ctx,
-            &r,
-            ([pos[0], pos[1]],
-             0.0,
-             [0.0, 0.0],
-             graphics::WHITE)).unwrap();
+            ctx, &r, ([pos[0], pos[1]], 0.0, [0.0, 0.0], graphics::WHITE)).unwrap();
     }
 
     fn draw_text(&mut self, ctx: &mut Context, color: [f32; 4], pos: [f32; 2], size: f32, text: String) {
@@ -113,6 +126,9 @@ struct GGEZGUIPainter<'b> {
 
 impl<'b> wdem_tracker::gui_painter::GUIPainter for GGEZGUIPainter<'b> {
     fn start(&mut self) { }
+    fn draw_lines(&mut self, color: [f32; 4], pos: [f32; 2], points: &[[f32; 2]], filled: bool, thickness: f32) {
+        self.p.borrow_mut().draw_lines(&mut self.c, color, pos, points, filled, thickness);
+    }
     fn draw_rect(&mut self, color: [f32; 4], pos: [f32; 2], size: [f32; 2], filled: bool, thickness: f32) {
         self.p.borrow_mut().draw_rect(&mut self.c, color, pos, size, filled, thickness);
     }
@@ -135,7 +151,7 @@ struct Output {
 }
 
 impl OutputHandler for Output {
-    fn emit_event(&mut self, track_idx: usize, val: f32) {
+    fn emit_event(&mut self, _track_idx: usize, _val: f32) {
         //d// println!("EMIT: {}: {}", track_idx, val);
     }
 
@@ -149,7 +165,15 @@ impl OutputHandler for Output {
     }
 }
 
-fn start_tracker_thread(ext_out: std::sync::Arc<std::sync::Mutex<Output>>, rcv: std::sync::mpsc::Receiver<TrackerSyncMsg>) {
+fn start_tracker_thread(
+    ext_out: std::sync::Arc<std::sync::Mutex<Output>>,
+    rcv: std::sync::mpsc::Receiver<TrackerSyncMsg>) {
+
+    let sr = crate::scopes::Scopes::new();
+
+    let rr = sr.sample_row.clone();
+
+
     std::thread::spawn(move || {
 
         let mut sim = signals::Simulator::new();
@@ -203,7 +227,7 @@ fn start_tracker_thread(ext_out: std::sync::Arc<std::sync::Mutex<Output>>, rcv: 
                             t.reset_pos();
                             is_playing = true;
                         },
-                        _ => (),
+                        // _ => (),
                     }
                 },
                 Err(std::sync::mpsc::TryRecvError::Empty) => (),
@@ -216,7 +240,7 @@ fn start_tracker_thread(ext_out: std::sync::Arc<std::sync::Mutex<Output>>, rcv: 
                 //d// println!("THRD: TICK {}", o.pos);
             }
 
-            sim.exec(t.tick2song_pos_in_s());
+            sim.exec(t.tick2song_pos_in_s(), rr.clone());
 
             if out_updated {
                 out_updated = false;
@@ -347,7 +371,7 @@ impl EventHandler for WDemTrackerGUI {
         Ok(())
     }
 
-    fn key_down_event(&mut self, ctx: &mut Context, keycode: KeyCode, keymods: KeyMods, _repeat: bool) {
+    fn key_down_event(&mut self, ctx: &mut Context, keycode: KeyCode, _keymods: KeyMods, _repeat: bool) {
         if keycode == KeyCode::Q {
             quit(ctx);
         }
@@ -469,6 +493,8 @@ impl EventHandler for WDemTrackerGUI {
 
         self.force_redraw = true;
         if self.force_redraw || self.editor.need_redraw() {
+            use wdem_tracker::gui_painter::GUIPainter;
+
             graphics::clear(ctx, graphics::BLACK);
             let play_pos_row = self.tracker_thread_out.lock().unwrap().pos;
             let val = self.tracker_thread_out.lock().unwrap().values.clone();
@@ -476,6 +502,9 @@ impl EventHandler for WDemTrackerGUI {
             let mut p : GGEZGUIPainter =
                 GGEZGUIPainter { p: self.painter.clone(), c: ctx, offs: (0.0, 0.0), area: (0.0, 0.0) };
             self.editor.show_state(32, &mut p, play_pos_row, &val);
+
+            p.set_offs((100.0, 0.0));
+//            p.draw_lines([1.0, 0.0, 1.0, 1.0], [200.0, 100.0], &vec![[1.0, 10.0], [5.0, 20.0]], false, 0.5);
 //            self.painter.borrow_mut().finish_draw_text(ctx);
         }
 
