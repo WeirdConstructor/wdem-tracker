@@ -1,6 +1,6 @@
 use wlambda::vval::VVal;
-use crate::scopes::SampleRow;
-use crate::scopes::SCOPE_SAMPLES;
+use wdem_tracker::scopes::SampleRow;
+use wdem_tracker::scopes::SCOPE_SAMPLES;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum OpIn {
@@ -143,7 +143,7 @@ impl DoSin {
             amp:   OpIn::Constant(1.0),
             phase: OpIn::Constant(0.0),
             vert:  OpIn::Constant(0.0),
-            f:     OpIn::Constant(0.001),
+            f:     OpIn::Constant(9.1),
             out:   0,
         }
     }
@@ -191,16 +191,26 @@ pub struct Simulator {
     pub sample_row:         SampleRow,
     pub scope_sample_len:   usize,
     pub scope_sample_pos:   usize,
+        reserved_reg_len:   usize,
 }
 
 impl Simulator {
-    pub fn new() -> Self {
-        Simulator {
+    pub fn new(reserved_reg_len: usize) -> Self {
+        let mut sim = Simulator {
             regs:               Vec::new(),
             ops:                Vec::new(),
             sample_row:         SampleRow::new(),
             scope_sample_len:   SCOPE_SAMPLES,
             scope_sample_pos:   0,
+            reserved_reg_len,
+        };
+        sim.regs.resize(reserved_reg_len, 0.0);
+        sim
+    }
+
+    pub fn copy_reserved_values(&mut self, input: &[f32]) {
+        if input.len() == self.reserved_reg_len {
+            self.regs[0..self.reserved_reg_len].copy_from_slice(input);
         }
     }
 
@@ -212,7 +222,6 @@ impl Simulator {
         let out_reg = op.get_output_reg("out");
 
         self.ops.insert(idx, op);
-        println!("INSRT {} , {} ", idx, self.ops.len());
 
         out_reg
     }

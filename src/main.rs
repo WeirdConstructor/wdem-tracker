@@ -10,6 +10,7 @@ mod signals;
 use wdem_tracker::track::*;
 use wdem_tracker::tracker::*;
 use wdem_tracker::tracker_editor::*;
+use wdem_tracker::scopes::Scopes;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -167,16 +168,15 @@ impl OutputHandler for Output {
 
 fn start_tracker_thread(
     ext_out: std::sync::Arc<std::sync::Mutex<Output>>,
-    rcv: std::sync::mpsc::Receiver<TrackerSyncMsg>) {
+    rcv: std::sync::mpsc::Receiver<TrackerSyncMsg>) -> Scopes {
 
-    let sr = crate::scopes::Scopes::new();
+    let sr = Scopes::new();
 
     let rr = sr.sample_row.clone();
 
-
     std::thread::spawn(move || {
 
-        let mut sim = signals::Simulator::new();
+        let mut sim = signals::Simulator::new(1);
         let sin1_out_reg = sim.new_op(0, "sin").unwrap();
         println!("SIN OUT REG : {}", sin1_out_reg);
 
@@ -240,6 +240,7 @@ fn start_tracker_thread(
                 //d// println!("THRD: TICK {}", o.pos);
             }
 
+            sim.copy_reserved_values(&o.values[..]);
             sim.exec(t.tick2song_pos_in_s(), rr.clone());
 
             if out_updated {
@@ -251,11 +252,13 @@ fn start_tracker_thread(
                 }
             }
 
-            println!("OUT SIN: sp[{}] {}", t.tick2song_pos_in_s(), sim.get_reg(sin1_out_reg));
+            //d// println!("OUT SIN: sp[{}] {}", t.tick2song_pos_in_s(), sim.get_reg(sin1_out_reg));
 
             std::thread::sleep(std::time::Duration::from_millis(t.tick_interval as u64));
         }
     });
+
+    sr
 }
 
 #[derive(Debug, Clone)]
@@ -308,6 +311,7 @@ struct WDemTrackerGUI {
     i: i32,
     interp_mode: bool,
     step: i32,
+    scopes: Scopes,
     set_step: bool,
 }
 
@@ -318,7 +322,7 @@ impl WDemTrackerGUI {
         let sync = ThreadTrackSync::new(sync_tx);
         let out = std::sync::Arc::new(std::sync::Mutex::new(Output { values: Vec::new(), pos: 0 }));
 
-        start_tracker_thread(out.clone(), sync_rx);
+        let scopes = start_tracker_thread(out.clone(), sync_rx);
 
         let font = graphics::Font::new(ctx, "/DejaVuSansMono.ttf").unwrap();
         let trk = Rc::new(RefCell::new(Tracker::new(sync)));
@@ -330,6 +334,7 @@ impl WDemTrackerGUI {
                 text_cache: std::collections::HashMap::new(),
                 reg_view_font: font,
             })),
+            scopes,
             force_redraw: true,
             interp_mode: false,
             set_step: false,
@@ -504,6 +509,8 @@ impl EventHandler for WDemTrackerGUI {
             self.editor.show_state(32, &mut p, play_pos_row, &val);
 
             p.set_offs((100.0, 0.0));
+            self.scopes.update_from_sample_row();
+            self.scopes.draw_scopes(&mut p, [100.0, 100.0]);
 //            p.draw_lines([1.0, 0.0, 1.0, 1.0], [200.0, 100.0], &vec![[1.0, 10.0], [5.0, 20.0]], false, 0.5);
 //            self.painter.borrow_mut().finish_draw_text(ctx);
         }
