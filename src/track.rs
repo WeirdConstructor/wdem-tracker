@@ -148,11 +148,34 @@ impl Track {
         self.desync();
     }
 
-    pub fn set_flags(&mut self, line: usize, flags: u16) {
-        let entry = self.data.iter_mut().find(|v| v.0 == line);
-        if let Some(val) = entry {
-            val.3 = flags;
+    pub fn set_a(&mut self, line: usize, value: u8) {
+        let entry = self.data.iter().enumerate().find(|v| (v.1).0 >= line);
+        if let Some((idx, val)) = entry {
+            if val.0 == line {
+                self.data[idx] = (line, val.1, val.2, (val.3 & 0xFF00) | (value as u16));
+            } else {
+                self.data.insert(idx, (line, 0.0, Interpolation::Step, value as u16));
+            }
+        } else {
+            self.data.push((line, 0.0, Interpolation::Step, value as u16));
         }
+
+        self.desync();
+    }
+
+    pub fn set_b(&mut self, line: usize, value: u8) {
+        let entry = self.data.iter().enumerate().find(|v| (v.1).0 >= line);
+        if let Some((idx, val)) = entry {
+            if val.0 == line {
+                self.data[idx] = (line, val.1, val.2, (val.3 & 0x00FF) | ((value as u16) << 8));
+            } else {
+                self.data.insert(idx, (line, 0.0, Interpolation::Step, (value as u16) << 8));
+            }
+        } else {
+            self.data.push((line, 0.0, Interpolation::Step, (value as u16) << 8));
+        }
+
+        self.desync();
     }
 
     pub fn set_value(&mut self, line: usize, value: f32) {

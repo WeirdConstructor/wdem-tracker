@@ -7,7 +7,6 @@ use std::cell::RefCell;
 pub struct TrackerEditor<SYNC> where SYNC: TrackerSync {
     pub tracker:    Rc<RefCell<Tracker<SYNC>>>,
     cur_track_idx:  usize,
-    cur_input_nr:   String,
     cur_line_idx:   usize,
     scroll_line_offs: usize,
     redraw_flag:    bool,
@@ -16,9 +15,10 @@ pub struct TrackerEditor<SYNC> where SYNC: TrackerSync {
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum TrackerInput {
-    Enter,
     Delete,
-    Character(char),
+    SetValue(f32),
+    SetA(u8),
+    SetB(u8),
     SetInterpStep,
     SetInterpLerp,
     SetInterpSStep,
@@ -45,8 +45,7 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
             tracker,
             scroll_line_offs:   0,
             cur_track_idx:      0,
-            cur_input_nr:       String::from(""),
-            cur_line_idx:        0,
+            cur_line_idx:       0,
             redraw_flag:        true,
             step_size:          1,
         }
@@ -105,7 +104,7 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
         };
 
         let s = if let Some((v, f)) = value {
-            format!("{} {:>6.2} {:X} {:X}", int_s, v, f & 0xFF, (f >> 8) & 0xFF)
+            format!("{} {:>6.2} {:02X} {:02X}", int_s, v, f & 0xFF, (f >> 8) & 0xFF)
         } else {
             String::from("- ------ -- --")
         };
@@ -231,26 +230,29 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
     }
 
     pub fn process_input(&mut self, input: TrackerInput) {
-        let mut was_input = false;
-
         self.redraw_flag = true;
 
         match input {
-            TrackerInput::Enter => {
-                // parse self.cur_input_nr to float and enter into current row.
+            TrackerInput::SetA(v) => {
+                self.tracker.borrow_mut()
+                    .set_a(
+                        self.cur_track_idx,
+                        self.cur_line_idx,
+                        v);
             },
-            TrackerInput::Character(c) => {
-                match c {
-                    '0'..='9' => {
-                        was_input = true;
-                        self.cur_input_nr += &c.to_string();
-                    },
-                    '.' => {
-                        was_input = true;
-                        self.cur_input_nr += &c.to_string();
-                    },
-                    _ => (),
-                }
+            TrackerInput::SetB(v) => {
+                self.tracker.borrow_mut()
+                    .set_b(
+                        self.cur_track_idx,
+                        self.cur_line_idx,
+                        v);
+            },
+            TrackerInput::SetValue(v) => {
+                self.tracker.borrow_mut()
+                    .set_value(
+                        self.cur_track_idx,
+                        self.cur_line_idx,
+                        v);
             },
             TrackerInput::Delete => {
                 self.tracker.borrow_mut()
@@ -332,16 +334,6 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
 
         if self.cur_line_idx >= self.tracker.borrow().lines {
             self.cur_line_idx = self.tracker.borrow().lines;
-        }
-
-        if was_input {
-            self.tracker.borrow_mut()
-                .set_value(
-                    self.cur_track_idx,
-                    self.cur_line_idx,
-                    self.cur_input_nr.parse::<f32>().unwrap_or(0.0));
-        } else {
-            self.cur_input_nr = String::from("");
         }
     }
 }

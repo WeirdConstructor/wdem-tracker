@@ -207,6 +207,14 @@ fn start_tracker_thread(
                     t.set_value(track_idx, line, v);
                     println!("THRD: SET VAL");
                 },
+                Ok(TrackerSyncMsg::SetA(track_idx, line, v)) => {
+                    t.set_a(track_idx, line, v);
+                    println!("THRD: SET A");
+                },
+                Ok(TrackerSyncMsg::SetB(track_idx, line, v)) => {
+                    t.set_b(track_idx, line, v);
+                    println!("THRD: SET B");
+                },
                 Ok(TrackerSyncMsg::RemoveValue(track_idx, line)) => {
                     t.remove_value(track_idx, line);
                     println!("THRD: REMO VAL");
@@ -275,6 +283,8 @@ fn start_tracker_thread(
 enum TrackerSyncMsg {
     AddTrack(Track),
     SetValue(usize, usize, f32),
+    SetA(usize, usize, u8),
+    SetB(usize, usize, u8),
     SetInt(usize, usize, Interpolation),
     RemoveValue(usize, usize),
     PlayHead(PlayHeadAction),
@@ -300,12 +310,28 @@ impl TrackerSync for ThreadTrackSync {
     fn set_value(&mut self, track_idx: usize, line: usize, value: f32) {
         self.send.send(TrackerSyncMsg::SetValue(track_idx, line, value));
     }
+    fn set_a(&mut self, track_idx: usize, line: usize, value: u8) {
+        self.send.send(TrackerSyncMsg::SetA(track_idx, line, value));
+    }
+    fn set_b(&mut self, track_idx: usize, line: usize, value: u8) {
+        self.send.send(TrackerSyncMsg::SetB(track_idx, line, value));
+    }
     fn remove_value(&mut self, track_idx: usize, line: usize) {
         self.send.send(TrackerSyncMsg::RemoveValue(track_idx, line));
     }
     fn play_head(&mut self, act: PlayHeadAction) {
         self.send.send(TrackerSyncMsg::PlayHead(act));
     }
+}
+
+#[derive(Debug, PartialEq, Copy, Clone)]
+enum InputMode {
+    Normal,
+    Interpolation,
+    Step,
+    Value,
+    A,
+    B,
 }
 
 struct WDemTrackerGUI {
@@ -315,10 +341,11 @@ struct WDemTrackerGUI {
     force_redraw: bool,
     tracker_thread_out: std::sync::Arc<std::sync::Mutex<Output>>,
     i: i32,
-    interp_mode: bool,
+    mode: InputMode,
     step: i32,
     scopes: Scopes,
-    set_step: bool,
+    num_txt: String,
+    status_line: String,
 }
 
 impl WDemTrackerGUI {
@@ -342,11 +369,20 @@ impl WDemTrackerGUI {
             })),
             scopes,
             force_redraw: true,
-            interp_mode: false,
-            set_step: false,
+            mode: InputMode::Normal,
             step: 0,
             i: 0,
+            num_txt: String::from(""),
+            status_line: String::from(""),
         }
+    }
+
+    pub fn get_status_text(&self) -> String {
+        format!("[{:?}] {}", self.mode, self.status_line)
+    }
+
+    pub fn set_status_text(&mut self, txt: String) {
+        self.status_line = txt;
     }
 
     pub fn init(&mut self) {
@@ -360,6 +396,10 @@ impl WDemTrackerGUI {
                         (5, 0.2, Interpolation::Step, 0xBEEF),
                     ]));
         }
+    }
+
+    pub fn inp(&mut self, ti: TrackerInput) {
+        self.editor.process_input(ti);
     }
 }
 
@@ -376,89 +416,148 @@ impl EventHandler for WDemTrackerGUI {
 
     fn text_input_event(&mut self, ctx: &mut Context, character: char) {
         println!("CHR: {:?}", character);
-        if !self.set_step || !character.is_digit(10) {
-            self.set_step = false;
 
-            match character {
-                'e' if self.interp_mode => {
-                    self.editor.process_input(TrackerInput::SetInterpExp);
-                },
-                't' if self.interp_mode => {
-                    self.editor.process_input(TrackerInput::SetInterpSStep);
-                },
-                's' if self.interp_mode => {
-                    self.editor.process_input(TrackerInput::SetInterpStep);
-                },
-                'l' if self.interp_mode => {
-                    self.editor.process_input(TrackerInput::SetInterpLerp);
-                },
-                's' => {
-                    self.set_step = true;
-                    self.step = 0;
-                },
-                'x' => {
-                    self.editor.process_input(TrackerInput::Delete);
-                },
-                'h' => {
-                    self.editor.process_input(TrackerInput::TrackLeft);
-                },
-                'j' | 'J' => {
-                    if is_mod_active(ctx, KeyMods::SHIFT) {
-                        self.editor.process_input(TrackerInput::RowDown);
-                    } else {
-                        self.editor.process_input(TrackerInput::StepDown);
-                    }
-                },
-                'k' | 'K' => {
-                    if is_mod_active(ctx, KeyMods::SHIFT) {
-                        self.editor.process_input(TrackerInput::RowUp);
-                    } else {
-                        self.editor.process_input(TrackerInput::StepUp);
-                    }
-                },
-                'l' => {
-                    self.editor.process_input(TrackerInput::TrackRight);
-                },
-                'i' => {
-                    self.interp_mode = true;
-                },
-                ' ' => {
-                    self.editor.process_input(
-                        TrackerInput::PlayHead(PlayHeadAction::TogglePause));
-                },
-                'n' => {
-                    self.editor.process_input(
-                        TrackerInput::PlayHead(PlayHeadAction::PrevLine));
-                },
-                'm' => {
-                    self.editor.process_input(
-                        TrackerInput::PlayHead(PlayHeadAction::NextLine));
-                },
-                '-' | '.' | '0'..='9' => {
-                    self.editor.process_input(TrackerInput::Character(character));
-                },
-                _ => {
-                    self.interp_mode = false;
+        if character == '\u{1b}' { self.mode = InputMode::Normal; }
+
+        match self.mode {
+            InputMode::Normal => {
+                self.set_status_text(String::from(""));
+                match character {
+                    's' => {
+                        self.mode = InputMode::Step;
+                        self.step = 0;
+                    },
+                    'x' => {
+                        self.editor.process_input(TrackerInput::Delete);
+                    },
+                    'h' => {
+                        self.editor.process_input(TrackerInput::TrackLeft);
+                    },
+                    'j' | 'J' => {
+                        if is_mod_active(ctx, KeyMods::SHIFT) {
+                            self.editor.process_input(TrackerInput::RowDown);
+                        } else {
+                            self.editor.process_input(TrackerInput::StepDown);
+                        }
+                    },
+                    'k' | 'K' => {
+                        if is_mod_active(ctx, KeyMods::SHIFT) {
+                            self.editor.process_input(TrackerInput::RowUp);
+                        } else {
+                            self.editor.process_input(TrackerInput::StepUp);
+                        }
+                    },
+                    'l' => {
+                        self.editor.process_input(TrackerInput::TrackRight);
+                    },
+                    'i' => {
+                        self.mode = InputMode::Interpolation;
+                    },
+                    ' ' => {
+                        self.editor.process_input(
+                            TrackerInput::PlayHead(PlayHeadAction::TogglePause));
+                    },
+                    'n' => {
+                        self.editor.process_input(
+                            TrackerInput::PlayHead(PlayHeadAction::PrevLine));
+                    },
+                    'm' => {
+                        self.editor.process_input(
+                            TrackerInput::PlayHead(PlayHeadAction::NextLine));
+                    },
+                    'a' => {
+                        self.num_txt = String::from("");
+                        self.mode = InputMode::A;
+                    },
+                    'b' => {
+                        self.num_txt = String::from("");
+                        self.mode = InputMode::B;
+                    },
+                    '-' | '.' | '0'..='9' => {
+                        self.num_txt = String::from("");
+                        self.num_txt.push(character);
+                        self.mode = InputMode::Value;
+                        self.set_status_text(format!("value[{}]", self.num_txt));
+                    },
+                    _ => { },
                 }
-            }
+            },
+            InputMode::A => {
+                match character {
+                    '0'..='9' | 'A'..='F' | 'a'..='f'  => {
+                        self.num_txt.push(character);
+                        self.set_status_text(format!("a[{}]", self.num_txt));
+                    },
+                    _ => { }
+                }
 
-        } else if self.set_step {
-            match character {
-                '0' => { self.step *= 10; },
-                '1' => { self.step += 1; },
-                '2' => { self.step += 2; },
-                '3' => { self.step += 3; },
-                '4' => { self.step += 4; },
-                '5' => { self.step += 5; },
-                '6' => { self.step += 6; },
-                '7' => { self.step += 7; },
-                '8' => { self.step += 8; },
-                '9' => { self.step += 9; },
-                _ => { self.set_step = false; },
-            }
+                if self.num_txt.len() >= 2 {
+                    self.inp(TrackerInput::SetA(
+                        u8::from_str_radix(&self.num_txt, 16).unwrap_or(0)));
+                    self.mode = InputMode::Normal;
+                }
+            },
+            InputMode::B => {
+                match character {
+                    '0'..='9' | 'A'..='F' | 'a'..='f'  => {
+                        self.num_txt.push(character);
+                        self.set_status_text(format!("a[{}]", self.num_txt));
+                    },
+                    _ => { }
+                }
 
-            self.editor.process_input(
-                TrackerInput::SetStep(self.step as usize));
+                if self.num_txt.len() >= 2 {
+                    self.inp(TrackerInput::SetB(
+                        u8::from_str_radix(&self.num_txt, 16).unwrap_or(0)));
+                    self.mode = InputMode::Normal;
+                }
+            },
+            InputMode::Value => {
+                match character {
+                    '-' | '.' | '0'..='9' => {
+                        self.num_txt.push(character);
+                    },
+                    '\r' => {
+                        self.inp(TrackerInput::SetValue(
+                            self.num_txt.parse::<f32>().unwrap_or(0.0)));
+                        self.mode = InputMode::Normal;
+                    },
+                    _ => { }
+                }
+
+                self.set_status_text(format!("value[{}]", self.num_txt));
+            },
+            InputMode::Interpolation => {
+                match character {
+                    'e' => { self.inp(TrackerInput::SetInterpExp); },
+                    't' => { self.inp(TrackerInput::SetInterpSStep); },
+                    's' => { self.inp(TrackerInput::SetInterpStep); },
+                    'l' => { self.inp(TrackerInput::SetInterpLerp); },
+                    _ => { },
+                }
+
+                self.mode = InputMode::Normal;
+            },
+            InputMode::Step => {
+                match character {
+                    '0' => { self.step *= 10; },
+                    '1' => { self.step += 1; },
+                    '2' => { self.step += 2; },
+                    '3' => { self.step += 3; },
+                    '4' => { self.step += 4; },
+                    '5' => { self.step += 5; },
+                    '6' => { self.step += 6; },
+                    '7' => { self.step += 7; },
+                    '8' => { self.step += 8; },
+                    '9' => { self.step += 9; },
+                    _ => { self.mode = InputMode::Normal; },
+                }
+
+                self.set_status_text(format!("step[{}]", self.step));
+
+                self.editor.process_input(
+                    TrackerInput::SetStep(self.step as usize));
+            }
         }
     }
 
@@ -498,9 +597,13 @@ impl EventHandler for WDemTrackerGUI {
             self.force_redraw = false;
             let mut p : GGEZGUIPainter =
                 GGEZGUIPainter { p: self.painter.clone(), c: ctx, offs: (0.0, 0.0), area: (0.0, 0.0) };
+
+            p.set_offs((0.0, 0.0));
+            p.draw_text([1.0, 0.0, 0.0, 1.0], [0.0, 0.0], 10.0, self.get_status_text());
+            p.set_offs((0.0, 20.0));
             self.editor.show_state(32, &mut p, play_pos_row, &val);
 
-            p.set_offs((0.0, 600.0));
+            p.set_offs((0.0, 640.0));
             self.scopes.update_from_sample_row();
             self.scopes.draw_scopes(&mut p);
 //            p.draw_lines([1.0, 0.0, 1.0, 1.0], [200.0, 100.0], &vec![[1.0, 10.0], [5.0, 20.0]], false, 0.5);

@@ -44,6 +44,12 @@ pub trait TrackerSync {
     /// Called by Tracker when a value in a specific track and line
     /// is added.
     fn set_value(&mut self, track_idx: usize, line: usize, value: f32);
+    /// Called by Tracker when the a flag value in a specific track and line
+    /// is added.
+    fn set_a(&mut self, track_idx: usize, line: usize, value: u8);
+    /// Called by Tracker when the b flag value in a specific track and line
+    /// is added.
+    fn set_b(&mut self, track_idx: usize, line: usize, value: u8);
     /// Called by Tracker when an interpolation for a value should be set.
     /// Does nothing if no value at that position exists.
     fn set_int(&mut self, track_idx: usize, line: usize, int: Interpolation);
@@ -60,6 +66,8 @@ pub struct TrackerNopSync { }
 impl TrackerSync for TrackerNopSync {
     fn add_track(&mut self, _t: Track) { }
     fn set_value(&mut self, _track_idx: usize, _line: usize, _value: f32) { }
+    fn set_a(&mut self, _track_idx: usize, _line: usize, _value: u8) { }
+    fn set_b(&mut self, _track_idx: usize, _line: usize, _value: u8) { }
     fn set_int(&mut self, _track_idx: usize, _line: usize, _int: Interpolation) { }
     fn remove_value(&mut self, _track_idx: usize, _line: usize) { }
     fn play_head(&mut self, _act: PlayHeadAction) { }
@@ -200,6 +208,16 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
     pub fn set_int(&mut self, track_idx: usize, line: usize, int: Interpolation) {
         self.sync.set_int(track_idx, line, int);
         self.tracks[track_idx].set_int(line, int);
+    }
+
+    pub fn set_a(&mut self, track_idx: usize, line: usize, v: u8) {
+        self.sync.set_a(track_idx, line, v);
+        self.tracks[track_idx].set_a(line, v);
+    }
+
+    pub fn set_b(&mut self, track_idx: usize, line: usize, v: u8) {
+        self.sync.set_b(track_idx, line, v);
+        self.tracks[track_idx].set_b(line, v);
     }
 
     pub fn set_value(&mut self, track_idx: usize, line: usize, value: f32) {
