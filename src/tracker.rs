@@ -11,12 +11,14 @@ pub trait OutputHandler {
     /// Called by Tracker::tick() when a new line started and
     /// a track has a new value defined. Useful for driving note on/off
     /// events on a synthesizer.
-    fn emit_event(&mut self, track_idx: usize, val: f32);
+    fn emit_event(&mut self, track_idx: usize, val: f32, flags: u16);
     /// Called when the Tracker::tick() function advanced to a new line.
     fn emit_play_line(&mut self, play_line: i32);
     /// This should return a buffer for storing the interpolated values
     /// of all tracks. Useful for driving synthesizer automation.
     fn value_buffer(&mut self) -> &mut Vec<f32>;
+    /// Is used to output the song position in seconds.
+    fn song_pos(&mut self) -> &mut f32;
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -167,8 +169,8 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
 
             for (track_idx, t) in self.tracks.iter_mut().enumerate() {
                 let e = t.play_line(new_play_line, self.lines);
-                if let Some(v) = e {
-                    output.emit_event(track_idx, v);
+                if let Some((v, f)) = e {
+                    output.emit_event(track_idx, v, f);
                 }
             }
         }
@@ -176,6 +178,7 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
 
         self.play_line = new_play_line as i32;
 
+        *(output.song_pos()) = self.tick2song_pos_in_s();
         let buf : &mut Vec<f32> = &mut output.value_buffer();
 
         if buf.len() < self.tracks.len() {

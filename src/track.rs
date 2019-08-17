@@ -56,7 +56,7 @@ impl InterpolationState {
         self.int = Interpolation::Empty;
     }
 
-    fn to_end(&mut self, d: (usize, f32, Interpolation), end_line: usize) {
+    fn to_end(&mut self, d: (usize, f32, Interpolation, u16), end_line: usize) {
         self.line_a = d.0;
         self.val_a  = d.1;
         self.int    = d.2;
@@ -64,7 +64,7 @@ impl InterpolationState {
         self.val_b  = 0.0;
     }
 
-    fn to_next(&mut self, d: (usize, f32, Interpolation), db: (usize, f32, Interpolation)) {
+    fn to_next(&mut self, d: (usize, f32, Interpolation, u16), db: (usize, f32, Interpolation, u16)) {
         self.line_a = d.0;
         self.val_a  = d.1;
         self.int    = d.2;
@@ -87,11 +87,11 @@ pub struct Track {
     interpol: InterpolationState,
     // if index is at or above desired key, interpolate
     // else set index = 0 and restart search for right key
-    pub data: Vec<(usize, f32, Interpolation)>,
+    pub data: Vec<(usize, f32, Interpolation, u16)>,
 }
 
 impl Track {
-    pub fn new(name: &str, data: Vec<(usize, f32, Interpolation)>) -> Self {
+    pub fn new(name: &str, data: Vec<(usize, f32, Interpolation, u16)>) -> Self {
         Track {
             name: String::from(name),
             play_pos: PlayPos::Desync,
@@ -148,22 +148,29 @@ impl Track {
         self.desync();
     }
 
+    pub fn set_flags(&mut self, line: usize, flags: u16) {
+        let entry = self.data.iter_mut().find(|v| v.0 == line);
+        if let Some(val) = entry {
+            val.3 = flags;
+        }
+    }
+
     pub fn set_value(&mut self, line: usize, value: f32) {
         let entry = self.data.iter().enumerate().find(|v| (v.1).0 >= line);
         if let Some((idx, val)) = entry {
             if val.0 == line {
-                self.data[idx] = (line, value, Interpolation::Step);
+                self.data[idx] = (line, value, val.2, val.3);
             } else {
-                self.data.insert(idx, (line, value, Interpolation::Step));
+                self.data.insert(idx, (line, value, Interpolation::Step, 0));
             }
         } else {
-            self.data.push((line, value, Interpolation::Step));
+            self.data.push((line, value, Interpolation::Step, 0));
         }
 
         self.desync();
     }
 
-    fn sync_interpol_to_play_line(&mut self, line: usize, end_line: usize) -> Option<f32> {
+    fn sync_interpol_to_play_line(&mut self, line: usize, end_line: usize) -> Option<(f32, u16)> {
         match self.play_pos {
             PlayPos::End     => {
                 if self.data.is_empty() {
@@ -186,11 +193,11 @@ impl Track {
                         self.play_pos = PlayPos::At(idx + 1);
                     }
 
-                    Some(d.1)
+                    Some((d.1, d.3))
                 } else { // assuming here: d.0 > line
                     if idx == 0 {
                         self.interpol.to_next(
-                            (0, 0.0, Interpolation::Step), d);
+                            (0, 0.0, Interpolation::Step, 0), d);
                     } else {
                         self.interpol.to_next(
                             self.data[idx - 1], d);
@@ -218,7 +225,7 @@ impl Track {
     /// specified for setting up the interpolations.
     /// Should be called in order of the track events, othewise 
     /// desync() should be called first.
-    pub fn play_line(&mut self, line: usize, end_line: usize) -> Option<f32> {
+    pub fn play_line(&mut self, line: usize, end_line: usize) -> Option<(f32, u16)> {
         self.check_sync(line, end_line);
         self.sync_interpol_to_play_line(line, end_line)
     }

@@ -36,7 +36,7 @@ pub enum TrackerInput {
 const TPOS_PAD      : f32 = 50.0;
 const TRACK_PAD     : f32 =  0.0;
 const TRACK_VAL_PAD : f32 =  4.0;
-const TRACK_WIDTH   : f32 = 70.0 + TRACK_VAL_PAD;
+const TRACK_WIDTH   : f32 = 122.0 + TRACK_VAL_PAD;
 const ROW_HEIGHT    : f32 = 18.0;
 
 impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
@@ -93,7 +93,7 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
         cursor: bool,
         beat: bool,
         play_pos_row: i32,
-        value: Option<f32>,
+        value: Option<(f32, u16)>,
         interp: Interpolation) where P: GUIPainter {
 
         let int_s = match interp {
@@ -104,10 +104,10 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
             Interpolation::Exp   => "^",
         };
 
-        let s = if let Some(v) = value {
-            format!("{} {:>6.2}", int_s, v)
+        let s = if let Some((v, f)) = value {
+            format!("{} {:>6.2} {:X} {:X}", int_s, v, f & 0xFF, (f >> 8) & 0xFF)
         } else {
-            String::from("- ------")
+            String::from("- ------ -- --")
         };
 
         let txt_x =
@@ -207,7 +207,7 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
                         line_idx - self.scroll_line_offs,
                         line_idx, track_idx, cursor_is_here, beat,
                         play_pos_row,
-                        Some(track.data[track_line_pointer].1),
+                        Some((track.data[track_line_pointer].1, track.data[track_line_pointer].3)),
                         track.data[track_line_pointer].2);
 
                     track_line_pointer += 1;

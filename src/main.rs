@@ -127,13 +127,19 @@ struct GGEZGUIPainter<'b> {
 
 impl<'b> wdem_tracker::gui_painter::GUIPainter for GGEZGUIPainter<'b> {
     fn start(&mut self) { }
-    fn draw_lines(&mut self, color: [f32; 4], pos: [f32; 2], points: &[[f32; 2]], filled: bool, thickness: f32) {
+    fn draw_lines(&mut self, color: [f32; 4], mut pos: [f32; 2], points: &[[f32; 2]], filled: bool, thickness: f32) {
+        pos[0] += self.offs.0;
+        pos[1] += self.offs.1;
         self.p.borrow_mut().draw_lines(&mut self.c, color, pos, points, filled, thickness);
     }
-    fn draw_rect(&mut self, color: [f32; 4], pos: [f32; 2], size: [f32; 2], filled: bool, thickness: f32) {
+    fn draw_rect(&mut self, color: [f32; 4], mut pos: [f32; 2], size: [f32; 2], filled: bool, thickness: f32) {
+        pos[0] += self.offs.0;
+        pos[1] += self.offs.1;
         self.p.borrow_mut().draw_rect(&mut self.c, color, pos, size, filled, thickness);
     }
-    fn draw_text(&mut self, color: [f32; 4], pos: [f32; 2], size: f32, text: String) {
+    fn draw_text(&mut self, color: [f32; 4], mut pos: [f32; 2], size: f32, text: String) {
+        pos[0] += self.offs.0;
+        pos[1] += self.offs.1;
         self.p.borrow_mut().draw_text(&mut self.c, color, pos, size, text);
     }
     fn show(&mut self) {
@@ -147,13 +153,14 @@ impl<'b> wdem_tracker::gui_painter::GUIPainter for GGEZGUIPainter<'b> {
 }
 
 struct Output {
-    values: Vec<f32>,
-    pos:    i32,
+    values:         Vec<f32>,
+    pos:            i32,
+    song_pos_s:     f32,
 }
 
 impl OutputHandler for Output {
-    fn emit_event(&mut self, _track_idx: usize, _val: f32) {
-        //d// println!("EMIT: {}: {}", track_idx, val);
+    fn emit_event(&mut self, track_idx: usize, val: f32, flags: u16) {
+        println!("EMIT: {}: {}/{}", track_idx, val, flags);
     }
 
     fn emit_play_line(&mut self, play_line: i32) {
@@ -161,9 +168,9 @@ impl OutputHandler for Output {
         self.pos = play_line;
     }
 
-    fn value_buffer(&mut self) -> &mut Vec<f32> {
-        return &mut self.values;
-    }
+    fn value_buffer(&mut self) -> &mut Vec<f32> { return &mut self.values; }
+
+    fn song_pos(&mut self) -> &mut f32 { return &mut self.song_pos_s; }
 }
 
 fn start_tracker_thread(
@@ -180,7 +187,7 @@ fn start_tracker_thread(
         let sin1_out_reg = sim.new_op(0, "sin").unwrap();
         println!("SIN OUT REG : {}", sin1_out_reg);
 
-        let mut o = Output { values: Vec::new(), pos: 0 };
+        let mut o = Output { values: Vec::new(), pos: 0, song_pos_s: 0.0 };
         let mut t = Tracker::new(TrackerNopSync { });
 
         let mut is_playing = true;
@@ -240,21 +247,24 @@ fn start_tracker_thread(
                 //d// println!("THRD: TICK {}", o.pos);
             }
 
-            sim.copy_reserved_values(&o.values[..]);
-            sim.exec(t.tick2song_pos_in_s(), rr.clone());
-
             if out_updated {
                 out_updated = false;
 
+                sim.copy_reserved_values(&o.values[..]);
+                sim.exec(o.song_pos_s, rr.clone());
+
                 if let Ok(ref mut m) = ext_out.try_lock() {
-                    m.pos = o.pos;
-                    o.values = std::mem::replace(&mut m.values, o.values);
+                    m.pos        = o.pos;
+                    m.song_pos_s = o.song_pos_s;
+                    o.values     = std::mem::replace(&mut m.values, o.values);
                 }
             }
 
             //d// println!("OUT SIN: sp[{}] {}", t.tick2song_pos_in_s(), sim.get_reg(sin1_out_reg));
 
-            std::thread::sleep(std::time::Duration::from_millis(t.tick_interval as u64));
+            std::thread::sleep(
+                std::time::Duration::from_millis(
+                    t.tick_interval as u64));
         }
     });
 
@@ -298,10 +308,6 @@ impl TrackerSync for ThreadTrackSync {
     }
 }
 
-struct OutputValues {
-    values: Vec<f32>,
-}
-
 struct WDemTrackerGUI {
     tracker: Rc<RefCell<Tracker<ThreadTrackSync>>>,
     editor:  TrackerEditor<ThreadTrackSync>,
@@ -320,7 +326,7 @@ impl WDemTrackerGUI {
         let (sync_tx, sync_rx) = std::sync::mpsc::channel::<TrackerSyncMsg>();
 
         let sync = ThreadTrackSync::new(sync_tx);
-        let out = std::sync::Arc::new(std::sync::Mutex::new(Output { values: Vec::new(), pos: 0 }));
+        let out = std::sync::Arc::new(std::sync::Mutex::new(Output { values: Vec::new(), pos: 0, song_pos_s: 0.0 }));
 
         let scopes = start_tracker_thread(out.clone(), sync_rx);
 
@@ -349,25 +355,11 @@ impl WDemTrackerGUI {
                 Track::new(
                     &format!("xxx{}", i),
                     vec![
-                        (0, 1.0, Interpolation::Step),
-                        (4, 4.0, Interpolation::Step),
-                        (5, 0.2, Interpolation::Step),
+                        (0, 1.0, Interpolation::Step, 0xFF88),
+                        (4, 4.0, Interpolation::Step, 0x88FF),
+                        (5, 0.2, Interpolation::Step, 0xBEEF),
                     ]));
         }
-    }
-}
-
-impl OutputHandler for OutputValues {
-    fn emit_event(&mut self, track_idx: usize, val: f32) {
-        println!("EMIT: {}: {}", track_idx, val);
-    }
-
-    fn emit_play_line(&mut self, play_line: i32) {
-        println!("EMIT PP: {}", play_line);
-    }
-
-    fn value_buffer(&mut self) -> &mut Vec<f32> {
-        return &mut self.values;
     }
 }
 
@@ -508,9 +500,9 @@ impl EventHandler for WDemTrackerGUI {
                 GGEZGUIPainter { p: self.painter.clone(), c: ctx, offs: (0.0, 0.0), area: (0.0, 0.0) };
             self.editor.show_state(32, &mut p, play_pos_row, &val);
 
-            p.set_offs((100.0, 0.0));
+            p.set_offs((0.0, 600.0));
             self.scopes.update_from_sample_row();
-            self.scopes.draw_scopes(&mut p, [100.0, 100.0]);
+            self.scopes.draw_scopes(&mut p);
 //            p.draw_lines([1.0, 0.0, 1.0, 1.0], [200.0, 100.0], &vec![[1.0, 10.0], [5.0, 20.0]], false, 0.5);
 //            self.painter.borrow_mut().finish_draw_text(ctx);
         }

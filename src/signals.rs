@@ -269,7 +269,7 @@ impl Simulator {
             (self.scope_sample_pos + 1) % self.scope_sample_len;
 
         if let Ok(ref mut m) = ext_scopes.try_lock() {
-            use std::ops::DerefMut;
+//            use std::ops::DerefMut;
             std::mem::swap(&mut self.sample_row, &mut *m);
         }
     }
