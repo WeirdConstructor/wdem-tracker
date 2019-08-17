@@ -65,22 +65,33 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
 
     pub fn need_redraw(&self) -> bool { self.redraw_flag }
 
-    fn draw_track<P>(&self, painter: &mut P, track_idx: usize, cursor: bool, max_rows: usize, val: f32) where P: GUIPainter {
+    fn draw_track<P>(&self, painter: &mut P, track_idx: usize, name: &str, cursor: bool, max_rows: usize, val: f32) where P: GUIPainter {
         let mut clr = [0.8, 0.8, 0.8, 1.0];
         if cursor {
             clr = [1.0, 0.7, 0.7, 1.0];
         }
 
         painter.draw_rect(
-            clr,
+            [1.0, 1.0, 1.0, 1.0],
             [TPOS_PAD + track_idx as f32 * (TRACK_WIDTH + TRACK_PAD), 0.0],
+            [TRACK_WIDTH, ROW_HEIGHT],
+            false,
+            0.5);
+        painter.draw_text(
+            [1.0, 1.0, 1.0, 1.0],
+            [TPOS_PAD + track_idx as f32 * (TRACK_WIDTH + TRACK_PAD) + 3.0, 0.4 * ROW_HEIGHT],
+            0.6 * ROW_HEIGHT,
+            String::from(name));
+        painter.draw_rect(
+            clr,
+            [TPOS_PAD + track_idx as f32 * (TRACK_WIDTH + TRACK_PAD), ROW_HEIGHT],
             [TRACK_WIDTH, max_rows as f32 * ROW_HEIGHT],
             false,
             0.5);
         painter.draw_text(
             clr,
             [TPOS_PAD + track_idx as f32 * (TRACK_WIDTH + TRACK_PAD) + 2.0,
-             max_rows as f32 * ROW_HEIGHT + 2.0],
+             max_rows as f32 * ROW_HEIGHT + ROW_HEIGHT + 2.0],
             0.5 * ROW_HEIGHT,
             format!("{:<6.2}", val));
     }
@@ -114,7 +125,7 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
             + TPOS_PAD
             + track_idx as f32 * (TRACK_WIDTH + TRACK_PAD);
 
-        let txt_y = line_pos as f32 * ROW_HEIGHT;
+        let txt_y = line_pos as f32 * ROW_HEIGHT + ROW_HEIGHT;
 
         if track_idx == 0 {
             if line_idx as i32 == play_pos_row {
@@ -172,7 +183,7 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
 
         for (track_idx, track) in self.tracker.borrow().tracks.iter().enumerate() {
             let val = if values.len() > track_idx { values[track_idx] } else { 0.0 };
-            self.draw_track(painter, track_idx, self.cur_track_idx == track_idx, max_rows, val);
+            self.draw_track(painter, track_idx, &track.name, self.cur_track_idx == track_idx, max_rows, val);
 
             let first_data_cell = track.data.iter().enumerate().find(|v| (v.1).0 >= self.scroll_line_offs);
             let mut track_line_pointer =

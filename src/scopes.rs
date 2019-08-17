@@ -1,7 +1,7 @@
 use crate::gui_painter::*;
 
-pub const SCOPE_SAMPLES : usize = 512;
-const SCOPE_FONT_HEIGHT : f32 = 12.0;
+pub const SCOPE_SAMPLES : usize = 128;
+const SCOPE_FONT_HEIGHT : f32 = 13.0;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Scope {
@@ -54,7 +54,7 @@ impl Scope {
         }
     }
 
-    fn draw<P>(&mut self, painter: &mut P, pos: [f32; 2], size: [f32; 2]) where P: GUIPainter {
+    fn draw<P>(&mut self, painter: &mut P, idx: usize, pos: [f32; 2], size: [f32; 2]) where P: GUIPainter {
         let x_offs : f32 = size[0] / self.samples.len() as f32;
 
         let mut diff = self.max - self.min;
@@ -92,7 +92,7 @@ impl Scope {
             [1.0, 0.0, 1.0, 1.0],
             [pos[0], pos[1] + size[1]],
             SCOPE_FONT_HEIGHT,
-            format!("{:0.2}", self.recent_value));
+            format!("[{:02}] {:0.2}", idx, self.recent_value));
 
     }
 }
@@ -150,8 +150,8 @@ impl Scopes {
     }
 
     pub fn draw_scopes<P>(&mut self, painter: &mut P) where P: GUIPainter {
-        let scope_width     = 50.0;
-        let scope_height    = 30.0;
+        let scope_width     = 128.0;
+        let scope_height    = 48.0;
         let font_height     = SCOPE_FONT_HEIGHT;
         let per_row : usize = 6;
 
@@ -160,6 +160,7 @@ impl Scopes {
             let y = (scope_height + font_height) * ((i / per_row) as f32);
             s.draw(
                 painter,
+                i,
                 [(row_idx as f32) * scope_width, y],
                 [scope_width, scope_height]);
         }
