@@ -47,8 +47,8 @@ fn note2name(note: u8) -> String {
 const TPOS_PAD      : f32 = 50.0;
 const TRACK_PAD     : f32 =  0.0;
 const TRACK_VAL_PAD : f32 =  4.0;
-const TRACK_WIDTH   : f32 = 138.0 + TRACK_VAL_PAD;
-const ROW_HEIGHT    : f32 = 18.0;
+const TRACK_WIDTH   : f32 = 116.0 + TRACK_VAL_PAD;
+const ROW_HEIGHT    : f32 = 15.0;
 
 impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
     pub fn new(tracker: Rc<RefCell<Tracker<SYNC>>>) -> Self {
@@ -90,8 +90,8 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
             0.5);
         painter.draw_text(
             [1.0, 1.0, 1.0, 1.0],
-            [TPOS_PAD + track_idx as f32 * (TRACK_WIDTH + TRACK_PAD) + 3.0, 0.4 * ROW_HEIGHT],
-            0.6 * ROW_HEIGHT,
+            [TPOS_PAD + track_idx as f32 * (TRACK_WIDTH + TRACK_PAD) + 3.0, 0.2 * ROW_HEIGHT],
+            0.8 * ROW_HEIGHT,
             String::from(name));
         painter.draw_rect(
             clr,
@@ -103,7 +103,7 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
             clr,
             [TPOS_PAD + track_idx as f32 * (TRACK_WIDTH + TRACK_PAD) + 2.0,
              max_rows as f32 * ROW_HEIGHT + ROW_HEIGHT + 2.0],
-            0.5 * ROW_HEIGHT,
+            0.6 * ROW_HEIGHT,
             format!("{:<6.2}", val));
     }
 
@@ -152,7 +152,7 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
                 if beat { [0.5, 8.0, 0.5, 1.0] }
                 else { [0.6, 0.6, 0.6, 1.0] },
                 [TRACK_PAD / 2.0, txt_y],
-                ROW_HEIGHT * 0.6,
+                ROW_HEIGHT * 0.8,
                 format!("[{:0>4}]", line_idx));
         }
 
