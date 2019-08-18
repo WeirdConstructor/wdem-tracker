@@ -41,6 +41,8 @@ pub enum PlayHeadAction {
 pub trait TrackerSync {
     /// Called by Tracker when a new Track is added.
     fn add_track(&mut self, t: Track);
+    /// Called by Tracker when the a note in a specific track and line is added.
+    fn set_note(&mut self, track_idx: usize, line: usize, value: u8);
     /// Called by Tracker when a value in a specific track and line
     /// is added.
     fn set_value(&mut self, track_idx: usize, line: usize, value: f32);
@@ -66,6 +68,7 @@ pub struct TrackerNopSync { }
 impl TrackerSync for TrackerNopSync {
     fn add_track(&mut self, _t: Track) { }
     fn set_value(&mut self, _track_idx: usize, _line: usize, _value: f32) { }
+    fn set_note(&mut self, _track_idx: usize, _line: usize, _value: u8) { }
     fn set_a(&mut self, _track_idx: usize, _line: usize, _value: u8) { }
     fn set_b(&mut self, _track_idx: usize, _line: usize, _value: u8) { }
     fn set_int(&mut self, _track_idx: usize, _line: usize, _int: Interpolation) { }
@@ -208,6 +211,11 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
     pub fn set_int(&mut self, track_idx: usize, line: usize, int: Interpolation) {
         self.sync.set_int(track_idx, line, int);
         self.tracks[track_idx].set_int(line, int);
+    }
+
+    pub fn set_note(&mut self, track_idx: usize, line: usize, v: u8) {
+        self.sync.set_note(track_idx, line, v);
+        self.tracks[track_idx].set_note(line, v);
     }
 
     pub fn set_a(&mut self, track_idx: usize, line: usize, v: u8) {

@@ -40,6 +40,8 @@ impl std::default::Default for InterpolationState {
     fn default() -> Self { InterpolationState::new() }
 }
 
+type RowTuple = (usize, f32, Interpolation, u16, u8);
+
 impl InterpolationState {
     fn new() -> Self {
         InterpolationState {
@@ -56,7 +58,7 @@ impl InterpolationState {
         self.int = Interpolation::Empty;
     }
 
-    fn to_end(&mut self, d: (usize, f32, Interpolation, u16), end_line: usize) {
+    fn to_end(&mut self, d: RowTuple, end_line: usize) {
         self.line_a = d.0;
         self.val_a  = d.1;
         self.int    = d.2;
@@ -64,7 +66,7 @@ impl InterpolationState {
         self.val_b  = 0.0;
     }
 
-    fn to_next(&mut self, d: (usize, f32, Interpolation, u16), db: (usize, f32, Interpolation, u16)) {
+    fn to_next(&mut self, d: RowTuple, db: RowTuple) {
         self.line_a = d.0;
         self.val_a  = d.1;
         self.int    = d.2;
@@ -87,11 +89,11 @@ pub struct Track {
     interpol: InterpolationState,
     // if index is at or above desired key, interpolate
     // else set index = 0 and restart search for right key
-    pub data: Vec<(usize, f32, Interpolation, u16)>,
+    pub data: Vec<RowTuple>,
 }
 
 impl Track {
-    pub fn new(name: &str, data: Vec<(usize, f32, Interpolation, u16)>) -> Self {
+    pub fn new(name: &str, data: Vec<RowTuple>) -> Self {
         Track {
             name: String::from(name),
             play_pos: PlayPos::Desync,
@@ -148,16 +150,31 @@ impl Track {
         self.desync();
     }
 
+    pub fn set_note(&mut self, line: usize, value: u8) {
+        let entry = self.data.iter().enumerate().find(|v| (v.1).0 >= line);
+        if let Some((idx, val)) = entry {
+            if val.0 == line {
+                self.data[idx] = (line, val.1, val.2, val.3, value);
+            } else {
+                self.data.insert(idx, (line, 0.0, Interpolation::Step, 0, value));
+            }
+        } else {
+            self.data.push((line, 0.0, Interpolation::Step, 0, value));
+        }
+
+        self.desync();
+    }
+
     pub fn set_a(&mut self, line: usize, value: u8) {
         let entry = self.data.iter().enumerate().find(|v| (v.1).0 >= line);
         if let Some((idx, val)) = entry {
             if val.0 == line {
-                self.data[idx] = (line, val.1, val.2, (val.3 & 0xFF00) | (value as u16));
+                self.data[idx] = (line, val.1, val.2, (val.3 & 0xFF00) | (value as u16), val.4);
             } else {
-                self.data.insert(idx, (line, 0.0, Interpolation::Step, value as u16));
+                self.data.insert(idx, (line, 0.0, Interpolation::Step, value as u16, 0));
             }
         } else {
-            self.data.push((line, 0.0, Interpolation::Step, value as u16));
+            self.data.push((line, 0.0, Interpolation::Step, value as u16, 0));
         }
 
         self.desync();
@@ -167,12 +184,12 @@ impl Track {
         let entry = self.data.iter().enumerate().find(|v| (v.1).0 >= line);
         if let Some((idx, val)) = entry {
             if val.0 == line {
-                self.data[idx] = (line, val.1, val.2, (val.3 & 0x00FF) | ((value as u16) << 8));
+                self.data[idx] = (line, val.1, val.2, (val.3 & 0x00FF) | ((value as u16) << 8), val.4);
             } else {
-                self.data.insert(idx, (line, 0.0, Interpolation::Step, (value as u16) << 8));
+                self.data.insert(idx, (line, 0.0, Interpolation::Step, (value as u16) << 8, 0));
             }
         } else {
-            self.data.push((line, 0.0, Interpolation::Step, (value as u16) << 8));
+            self.data.push((line, 0.0, Interpolation::Step, (value as u16) << 8, 0));
         }
 
         self.desync();
@@ -182,12 +199,12 @@ impl Track {
         let entry = self.data.iter().enumerate().find(|v| (v.1).0 >= line);
         if let Some((idx, val)) = entry {
             if val.0 == line {
-                self.data[idx] = (line, value, val.2, val.3);
+                self.data[idx] = (line, value, val.2, val.3, val.4);
             } else {
-                self.data.insert(idx, (line, value, Interpolation::Step, 0));
+                self.data.insert(idx, (line, value, Interpolation::Step, 0, 0));
             }
         } else {
-            self.data.push((line, value, Interpolation::Step, 0));
+            self.data.push((line, value, Interpolation::Step, 0, 0));
         }
 
         self.desync();
@@ -220,7 +237,7 @@ impl Track {
                 } else { // assuming here: d.0 > line
                     if idx == 0 {
                         self.interpol.to_next(
-                            (0, 0.0, Interpolation::Step, 0), d);
+                            (0, 0.0, Interpolation::Step, 0, 0), d);
                     } else {
                         self.interpol.to_next(
                             self.data[idx - 1], d);

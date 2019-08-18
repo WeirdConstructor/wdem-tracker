@@ -16,6 +16,7 @@ pub struct TrackerEditor<SYNC> where SYNC: TrackerSync {
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum TrackerInput {
     Delete,
+    SetNote(u8),
     SetValue(f32),
     SetA(u8),
     SetB(u8),
@@ -33,10 +34,20 @@ pub enum TrackerInput {
     PlayHead(PlayHeadAction),
 }
 
+const NOTE_NAMES : &'static [&str] = &["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+fn note2name(note: u8) -> String {
+    if note == 0 { return String::from(""); }
+
+    let octave   : i32   = (note / 12) as i32 - 1;
+    let name_idx : usize = (note % 12) as usize;
+    format!("{}{}", NOTE_NAMES[name_idx], octave)
+}
+
 const TPOS_PAD      : f32 = 50.0;
 const TRACK_PAD     : f32 =  0.0;
 const TRACK_VAL_PAD : f32 =  4.0;
-const TRACK_WIDTH   : f32 = 122.0 + TRACK_VAL_PAD;
+const TRACK_WIDTH   : f32 = 138.0 + TRACK_VAL_PAD;
 const ROW_HEIGHT    : f32 = 18.0;
 
 impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
@@ -103,7 +114,7 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
         cursor: bool,
         beat: bool,
         play_pos_row: i32,
-        value: Option<(f32, u16)>,
+        value: Option<(f32, u16, u8)>,
         interp: Interpolation) where P: GUIPainter {
 
         let int_s = match interp {
@@ -114,10 +125,10 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
             Interpolation::Exp   => "^",
         };
 
-        let s = if let Some((v, f)) = value {
-            format!("{} {:>6.2} {:02X} {:02X}", int_s, v, f & 0xFF, (f >> 8) & 0xFF)
+        let s = if let Some((v, f, note)) = value {
+            format!("{:<4}{:>6.2}{}{:02X} {:02X}", note2name(note), v, int_s, f & 0xFF, (f >> 8) & 0xFF)
         } else {
-            String::from("- ------ -- --")
+            String::from("--- ------ -- --")
         };
 
         let txt_x =
@@ -217,7 +228,11 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
                         line_idx - self.scroll_line_offs,
                         line_idx, track_idx, cursor_is_here, beat,
                         play_pos_row,
-                        Some((track.data[track_line_pointer].1, track.data[track_line_pointer].3)),
+                        Some((
+                            track.data[track_line_pointer].1,
+                            track.data[track_line_pointer].3,
+                            track.data[track_line_pointer].4
+                        )),
                         track.data[track_line_pointer].2);
 
                     track_line_pointer += 1;
@@ -244,6 +259,13 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
         self.redraw_flag = true;
 
         match input {
+            TrackerInput::SetNote(v) => {
+                self.tracker.borrow_mut()
+                    .set_note(
+                        self.cur_track_idx,
+                        self.cur_line_idx,
+                        v);
+            },
             TrackerInput::SetA(v) => {
                 self.tracker.borrow_mut()
                     .set_a(

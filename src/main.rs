@@ -207,6 +207,10 @@ fn start_tracker_thread(
                     t.set_value(track_idx, line, v);
                     println!("THRD: SET VAL");
                 },
+                Ok(TrackerSyncMsg::SetNote(track_idx, line, v)) => {
+                    t.set_note(track_idx, line, v);
+                    println!("THRD: SET NOTE {}", v);
+                },
                 Ok(TrackerSyncMsg::SetA(track_idx, line, v)) => {
                     t.set_a(track_idx, line, v);
                     println!("THRD: SET A");
@@ -283,6 +287,7 @@ fn start_tracker_thread(
 enum TrackerSyncMsg {
     AddTrack(Track),
     SetValue(usize, usize, f32),
+    SetNote(usize, usize, u8),
     SetA(usize, usize, u8),
     SetB(usize, usize, u8),
     SetInt(usize, usize, Interpolation),
@@ -310,6 +315,9 @@ impl TrackerSync for ThreadTrackSync {
     fn set_value(&mut self, track_idx: usize, line: usize, value: f32) {
         self.send.send(TrackerSyncMsg::SetValue(track_idx, line, value));
     }
+    fn set_note(&mut self, track_idx: usize, line: usize, value: u8) {
+        self.send.send(TrackerSyncMsg::SetNote(track_idx, line, value));
+    }
     fn set_a(&mut self, track_idx: usize, line: usize, value: u8) {
         self.send.send(TrackerSyncMsg::SetA(track_idx, line, value));
     }
@@ -332,6 +340,7 @@ enum InputMode {
     Value,
     A,
     B,
+    Note,
 }
 
 struct WDemTrackerGUI {
@@ -345,6 +354,7 @@ struct WDemTrackerGUI {
     step: i32,
     scopes: Scopes,
     num_txt: String,
+    octave: u8,
     status_line: String,
 }
 
@@ -373,6 +383,7 @@ impl WDemTrackerGUI {
             step: 0,
             i: 0,
             num_txt: String::from(""),
+            octave: 4,
             status_line: String::from(""),
         }
     }
@@ -391,9 +402,9 @@ impl WDemTrackerGUI {
                 Track::new(
                     &format!("xxx{}", i),
                     vec![
-                        (0, 1.0, Interpolation::Step, 0xFF88),
-                        (4, 4.0, Interpolation::Step, 0x88FF),
-                        (5, 0.2, Interpolation::Step, 0xBEEF),
+                        (0, 1.0, Interpolation::Step, 0xFF88, 0x00),
+                        (4, 4.0, Interpolation::Step, 0x88FF, 0x00),
+                        (5, 0.2, Interpolation::Step, 0xBEEF, 0x00),
                     ]));
         }
     }
@@ -419,7 +430,14 @@ impl EventHandler for WDemTrackerGUI {
 
         if character == '\u{1b}' { self.mode = InputMode::Normal; }
 
-        match self.mode {
+        let mode =
+            if is_mod_active(ctx, KeyMods::ALT) {
+                InputMode::Note
+            } else {
+                self.mode
+            };
+
+        match mode {
             InputMode::Normal => {
                 self.set_status_text(String::from(""));
                 match character {
@@ -457,6 +475,9 @@ impl EventHandler for WDemTrackerGUI {
                         self.editor.process_input(
                             TrackerInput::PlayHead(PlayHeadAction::TogglePause));
                     },
+                    '#' => {
+                        self.mode = InputMode::Note;
+                    },
                     'n' => {
                         self.editor.process_input(
                             TrackerInput::PlayHead(PlayHeadAction::PrevLine));
@@ -480,6 +501,53 @@ impl EventHandler for WDemTrackerGUI {
                         self.set_status_text(format!("value[{}]", self.num_txt));
                     },
                     _ => { },
+                }
+            },
+            InputMode::Note => {
+                let mut note = 0;
+                // XXX: This is just german layout :-/
+                match character {
+                    '+' => { if self.octave < 9 { self.octave += 1; } },
+                    '-' => { if self.octave > 0 { self.octave -= 1; } },
+                    'y' => { note = (self.octave + 1) * 12 + 0;  }, // C
+                    's' => { note = (self.octave + 1) * 12 + 1;  }, // C#
+                    'x' => { note = (self.octave + 1) * 12 + 2;  }, // D
+                    'd' => { note = (self.octave + 1) * 12 + 3;  }, // D#
+                    'c' => { note = (self.octave + 1) * 12 + 4;  }, // E
+                    'v' => { note = (self.octave + 1) * 12 + 5;  }, // F
+                    'g' => { note = (self.octave + 1) * 12 + 6;  }, // F#
+                    'b' => { note = (self.octave + 1) * 12 + 7;  }, // G
+                    'h' => { note = (self.octave + 1) * 12 + 8;  }, // G#
+                    'n' => { note = (self.octave + 1) * 12 + 9;  }, // A
+                    'j' => { note = (self.octave + 1) * 12 + 10; }, // A#
+                    'm' => { note = (self.octave + 1) * 12 + 11; }, // B
+
+                    'q' => { note = (self.octave + 2) * 12 + 0;  }, // C
+                    '2' => { note = (self.octave + 2) * 12 + 1;  }, // C#
+                    'w' => { note = (self.octave + 2) * 12 + 2;  }, // D
+                    '3' => { note = (self.octave + 2) * 12 + 3;  }, // D#
+                    'e' => { note = (self.octave + 2) * 12 + 4;  }, // E
+                    'r' => { note = (self.octave + 2) * 12 + 5;  }, // F
+                    '5' => { note = (self.octave + 2) * 12 + 6;  }, // F#
+                    't' => { note = (self.octave + 2) * 12 + 7;  }, // G
+                    '6' => { note = (self.octave + 2) * 12 + 8;  }, // G#
+                    'y' => { note = (self.octave + 2) * 12 + 9;  }, // A
+                    '7' => { note = (self.octave + 2) * 12 + 10; }, // A#
+                    'u' => { note = (self.octave + 2) * 12 + 11; }, // B
+
+                    'i' => { note = (self.octave + 3) * 12 + 0;  }, // C
+                    '9' => { note = (self.octave + 3) * 12 + 1;  }, // C#
+                    'o' => { note = (self.octave + 3) * 12 + 2;  }, // D
+                    '0' => { note = (self.octave + 3) * 12 + 3;  }, // D#
+                    'p' => { note = (self.octave + 3) * 12 + 4;  }, // E
+                    _ => { },
+                }
+
+                self.set_status_text(format!("octave[{}]", self.octave));
+
+                if note > 0 {
+                    self.inp(TrackerInput::SetNote(note));
+                    self.editor.process_input(TrackerInput::StepDown);
                 }
             },
             InputMode::A => {
