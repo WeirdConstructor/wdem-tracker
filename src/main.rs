@@ -277,7 +277,8 @@ impl OutputHandler for Output {
 
 fn start_tracker_thread(
     ext_out: std::sync::Arc<std::sync::Mutex<Output>>,
-    rcv: std::sync::mpsc::Receiver<TrackerSyncMsg>) -> Scopes {
+    rcv: std::sync::mpsc::Receiver<TrackerSyncMsg>,
+    snd_ui: std::sync::mpsc::Sender<SimulatorUIEvent>) -> Scopes {
 
     let sr = Scopes::new();
 
@@ -465,11 +466,12 @@ struct WDemTrackerGUI {
 impl WDemTrackerGUI {
     pub fn new(ctx: &mut Context) -> WDemTrackerGUI {
         let (sync_tx, sync_rx) = std::sync::mpsc::channel::<TrackerSyncMsg>();
+        let (simuiev_tx, simuiev_rx) = std::sync::mpsc::channel::<SimulatorUIEvent>();
 
         let sync = ThreadTrackSync::new(sync_tx);
         let out = std::sync::Arc::new(std::sync::Mutex::new(Output { values: Vec::new(), pos: 0, song_pos_s: 0.0 }));
 
-        let scopes = start_tracker_thread(out.clone(), sync_rx);
+        let scopes = start_tracker_thread(out.clone(), sync_rx, simuiev_tx);
 
         let font = graphics::Font::new(ctx, "/DejaVuSansMono.ttf").unwrap();
         let trk = Rc::new(RefCell::new(Tracker::new(sync)));

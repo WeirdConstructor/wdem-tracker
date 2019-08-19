@@ -237,6 +237,33 @@ pub struct OpInfo {
     pub group: OpGroup,
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub enum SimulatorUIInput {
+    Refresh,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum SimulatorUIEvent {
+    OpSpecUpdate(Vec<(DemOpIOSpec, OpInfo)>),
+}
+
+pub fn handle_simulator_ui(
+    sim: &mut Simulator,
+    rx: std::sync::mpsc::Receiver<SimulatorUIInput>,
+    tx: std::sync::mpsc::Sender<SimulatorUIEvent>) -> bool
+{
+    let r = rx.try_recv();
+    match r {
+        Ok(SimulatorUIInput::Refresh) => {
+            tx.send(SimulatorUIEvent::OpSpecUpdate(sim.get_specs()));
+        },
+        Err(std::sync::mpsc::TryRecvError::Empty) => (),
+        Err(std::sync::mpsc::TryRecvError::Disconnected) => { return false; }
+    }
+
+    true
+}
+
 pub struct Simulator {
     pub regs:               Vec<f32>,
     pub ops:                Vec<Box<dyn DemOp>>,
