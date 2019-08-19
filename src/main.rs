@@ -132,8 +132,8 @@ impl<'b> wdem_tracker::gui_painter::GUIPainter for GGEZGUIPainter<'b> {
         self.p.borrow_mut().draw_rect(&mut self.c, color, pos, size, filled, thickness);
     }
     fn draw_text(&mut self, color: [f32; 4], mut pos: [f32; 2], size: f32, text: String) {
-        pos[0] += self.offs.0;
-        pos[1] += self.offs.1;
+        pos[0] += self.offs.0 - 0.5;
+        pos[1] += self.offs.1 - 0.5;
         self.p.borrow_mut().draw_text(&mut self.c, color, pos, size, text);
     }
     fn show(&mut self) {
@@ -162,26 +162,35 @@ pub struct OperatorInputSettings {
         active_boxes: Vec<(f32, f32, f32, f32, usize, usize)>,
 }
 
-fn draw_op<P>(p: &mut P, op: &(DemOpIOSpec, OpInfo)) -> f32
+fn draw_op<P>(p: &mut P, op: &(DemOpIOSpec, OpInfo)) -> (f32, f32)
         where P: wdem_tracker::gui_painter::GUIPainter {
-    let inp_col_w : f32 = 100.0;
-    let text_h : f32 = 10.0;
-    let mut y : f32  = 0.0;
-    let mut _y2 : f32 = 0.0;
+    let inp_col_w : f32 = 90.0;
+    let padding   : f32 = 2.0;
+    let text_h    : f32 = 12.0;
 
-    let op_h = op.0.input_values.len() as f32 * text_h;
+    let mut io_lens = op.0.input_values.len();
+    if op.0.output_regs.len() > io_lens {
+        io_lens = op.0.output_regs.len();
+    }
+
+    let op_h = (1 + io_lens) as f32 * text_h + padding * 2.0;
+    let op_w = (padding + inp_col_w) * 2.0;
 
     p.draw_rect(
-        [0.2, 0.2, 0.2, 0.4],
-        [0.0, 0.0],
-        [inp_col_w * 2.0, op_h],
-        true, 0.0);
+        [0.2, 0.2, 0.2, 1.0], [0.0, 0.0], [op_w, op_h], true, 0.1);
+    p.draw_rect(
+        [1.0, 0.0, 1.0, 1.0], [0.0, 0.0], [op_w, op_h], false, 0.5);
+
+    p.add_offs(padding, padding);
 
     p.draw_text(
-        [0.3, 1.0, 0.8, 1.0], [0.0, y], text_h,
-        format!("{}", op.1.name));
+        [0.3, 1.0, 0.8, 1.0], [0.0, 0.0], text_h, format!("{}", op.1.name));
+    p.draw_text(
+        [1.0, 0.3, 0.3, 1.0], [inp_col_w - (text_h + padding), 0.0], text_h, "IN".to_string());
+    p.draw_text(
+        [0.3, 1.0, 0.3, 1.0], [inp_col_w + padding, 0.0], text_h, "OUT".to_string());
 
-    y += text_h;
+    let mut y = text_h;
 
     for (i, is) in op.0.input_values.iter().zip(op.0.inputs.iter()) {
         let text = match i {
@@ -215,14 +224,23 @@ fn draw_op<P>(p: &mut P, op: &(DemOpIOSpec, OpInfo)) -> f32
         y += text_h;
     }
 
-    p.draw_lines(
-        [1.0, 1.0, 0.0, 1.0],
-        [inp_col_w, 0.0],
-        &vec![[0.0, 0.0], [0.0, y]],
-        false,
-        1.0);
+    y = text_h;
+    for (o, os) in op.0.output_regs.iter().zip(op.0.outputs.iter()) {
+        p.draw_text(
+            [1.0, 0.3, 0.8, 1.0], [inp_col_w + padding, y], text_h,
+            format!("{:<7}: r{}", os.name, o));
+        y += text_h;
+    }
 
-    y
+    p.add_offs(0.0, -padding);
+    p.draw_lines(
+        [1.0, 0.0, 1.0, 1.0],
+        [inp_col_w, 0.0],
+        &vec![[0.0, 0.0], [0.0, op_h]],
+        false,
+        0.5);
+
+    (op_w, op_h)
 }
 
 impl OperatorInputSettings {
@@ -288,10 +306,10 @@ impl OperatorInputSettings {
             let mut max_op_h = 0.0;
             for op in grp.1.iter() {
                 let o = p.get_offs();
-                p.set_offs((o.0 + 20.0, o.1 + text_h));
-                let h = draw_op(p, op);
+                p.set_offs((o.0, o.1 + text_h));
+                let (w, h) = draw_op(p, op);
                 if h > max_op_h { max_op_h = h; }
-
+                p.set_offs((o.0 + w, o.1));
             }
 
             p.set_offs(oo);
@@ -839,17 +857,19 @@ impl EventHandler for WDemTrackerGUI {
             let mut p : GGEZGUIPainter =
                 GGEZGUIPainter { p: self.painter.clone(), c: ctx, offs: (0.0, 0.0), area: (0.0, 0.0) };
 
-            p.set_offs((0.0, 0.0));
+            p.set_offs((0.5, 0.5));
             p.draw_text([1.0, 0.0, 0.0, 1.0], [0.0, 0.0], 10.0, self.get_status_text());
-            p.set_offs((0.0, 20.0));
+            p.set_offs((0.5, 20.5));
             self.editor.show_state(32, &mut p, play_pos_row, &val);
 
-            p.set_offs((0.0, 640.0));
+            p.set_offs((0.5, 550.5));
             self.scopes.update_from_sample_row();
             self.scopes.draw_scopes(&mut p);
 
-            p.set_offs((300.0, 640.0));
+            p.set_offs((300.5, 640.5));
             self.op_inp_set.draw(&mut p);
+
+            p.show();
 //            p.draw_lines([1.0, 0.0, 1.0, 1.0], [200.0, 100.0], &vec![[1.0, 10.0], [5.0, 20.0]], false, 0.5);
 //            self.painter.borrow_mut().finish_draw_text(ctx);
         }

@@ -92,7 +92,7 @@ impl Scope {
             [1.0, 0.0, 1.0, 1.0],
             [pos[0], pos[1] + size[1]],
             SCOPE_FONT_HEIGHT,
-            format!("[{:02}] {:0.2}", idx, self.recent_value));
+            format!("r{} {:0.2}", idx, self.recent_value));
 
     }
 }
