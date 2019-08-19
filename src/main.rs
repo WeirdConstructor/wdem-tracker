@@ -17,9 +17,10 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 use ggez::{Context, ContextBuilder, GameResult};
-use ggez::event::{self, EventHandler, quit};
+use ggez::event::{self, EventHandler, quit, MouseButton};
 use ggez::graphics;
 use ggez::input::keyboard::{KeyCode, KeyMods, is_mod_active};
+use ggez::input::mouse::button_pressed;
 
 /* Synth
 
@@ -160,9 +161,11 @@ pub struct OperatorInputSettings {
     pub groups:       Vec<(String, Vec<(DemOpIOSpec, OpInfo)>)>,
                     //     x/y/w/h,  op_i,  in_i
         active_zones: Vec<([f32; 4], usize, usize)>,
+        highlight: Option<(usize, usize)>,
+        selection: Option<(usize, usize)>,
 }
 
-fn draw_op<P>(p: &mut P, op: &(DemOpIOSpec, OpInfo)) -> (f32, f32, Vec<([f32; 4], usize, usize)>)
+fn draw_op<P>(p: &mut P, op: &(DemOpIOSpec, OpInfo), highlight: &Option<(usize, usize)>, selection: &Option<(usize, usize)>) -> (f32, f32, Vec<([f32; 4], usize, usize)>)
         where P: wdem_tracker::gui_painter::GUIPainter {
     let inp_col_w : f32 = 102.0;
     let padding   : f32 =   2.0;
@@ -220,7 +223,27 @@ fn draw_op<P>(p: &mut P, op: &(DemOpIOSpec, OpInfo)) -> (f32, f32, Vec<([f32; 4]
         };
 
         let o = p.get_offs();
-        active_zones.push(([o.0, o.1, inp_col_w, text_h], op.0.index, idx));
+        active_zones.push(([o.0, o.1 + y, inp_col_w, text_h], op.0.index, idx));
+
+        let highlighted = if let Some((op_idx, i_idx)) = highlight {
+            *op_idx == op.0.index && idx == *i_idx
+        } else {
+            false
+        };
+
+        let selected = if let Some((op_idx, i_idx)) = selection {
+            *op_idx == op.0.index && idx == *i_idx
+        } else {
+            false
+        };
+
+        p.draw_rect(
+            if selected { [1.0, 0.2, 0.2, 1.0] }
+            else        { [0.4, 0.4, 0.4, 1.0] },
+            [0.0, y],
+            [inp_col_w - 1.0, text_h - 1.0],
+            highlighted,
+            0.5);
 
         p.draw_text(
             [1.0, 0.3, 0.8, 1.0], [0.0, y], text_h,
@@ -255,6 +278,34 @@ impl OperatorInputSettings {
             specs:         Vec::new(),
             groups:        Vec::new(),
             active_zones:  Vec::new(),
+            highlight:     None,
+            selection:     None,
+        }
+    }
+
+    pub fn handle_mouse_move(&mut self, x: f32, y: f32, button_is_down: bool) {
+        if !button_is_down { self.selection = None; }
+
+        let old_highlight = self.highlight;
+
+        self.highlight = None;
+
+        for az in self.active_zones.iter() {
+            if    x >= (az.0)[0]
+               && y >= (az.0)[1]
+               && x <= ((az.0)[0] + (az.0)[2])
+               && y <= ((az.0)[1] + (az.0)[3]) {
+
+                self.highlight = Some((az.1, az.2));
+
+                if    button_is_down
+                   && self.selection.is_none()
+                   && old_highlight == self.highlight {
+
+                    self.selection = self.highlight;
+                }
+                break;
+            }
         }
     }
 
@@ -314,7 +365,8 @@ impl OperatorInputSettings {
             for op in grp.1.iter() {
                 let o = p.get_offs();
                 p.set_offs((o.0, o.1 + text_h));
-                let (w, h, zones) = draw_op(p, op);
+
+                let (w, h, zones) = draw_op(p, op, &self.highlight, &self.selection);
                 self.active_zones.extend_from_slice(&zones);
                 if h > max_op_h { max_op_h = h; }
                 p.set_offs((o.0 + w, o.1));
@@ -619,6 +671,13 @@ impl EventHandler for WDemTrackerGUI {
         if keycode == KeyCode::Q {
             quit(ctx);
         }
+    }
+
+    fn mouse_button_down_event(&mut self, ctx: &mut Context, button: MouseButton, x: f32, y: f32) {
+    }
+
+    fn mouse_motion_event(&mut self, ctx: &mut Context, x: f32, y: f32, xr: f32, yr: f32) {
+        self.op_inp_set.handle_mouse_move(x, y, button_pressed(ctx, MouseButton::Left));
     }
 
     fn text_input_event(&mut self, ctx: &mut Context, character: char) {
