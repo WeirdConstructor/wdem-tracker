@@ -1,16 +1,17 @@
 extern crate serde_json;
 extern crate ggez;
-mod gui_painter;
-mod track;
-mod tracker;
-mod tracker_editor;
-mod scopes;
-mod signals;
+// mod gui_painter;
+// mod track;
+// mod tracker;
+// mod tracker_editor;
+// mod scopes;
+// mod signals;
 
 use wdem_tracker::track::*;
 use wdem_tracker::tracker::*;
 use wdem_tracker::tracker_editor::*;
 use wdem_tracker::scopes::Scopes;
+use wdem_tracker::signals::*;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -20,40 +21,33 @@ use ggez::event::{self, EventHandler, quit};
 use ggez::graphics;
 use ggez::input::keyboard::{KeyCode, KeyMods, is_mod_active};
 
-struct DummyParamSet {
-}
+/* Synth
 
-impl ModuleParameterSet for DummyParamSet {
-    fn count(&self) -> usize { 9 }
-    fn name(&self, _idx: usize) -> String { format!("ModulA") }
-    fn range(&self, _idx: usize) -> (f32, f32) { (0.0, 1.0) }
-}
+- Add DemOp I/O names
+- Make a Track an DemOp
+- Have 4 outputs: Note, Value, A, B. Note/A/B is 0-256, Value is any.
+- Make an DemOpUI, which takes an op index and a name (from wlambda for instance)
+  the DemOpUI queries the backend Simulator for details about the OP I/O count
+  and names.
+    - The UI communicates to the Signal thread via DemOpUIMessage enum.
+    - The Simulator can send it's config out via a mpsc channel or some
+      other kind of way. It's triggered by a DemOpUIMessage::GetConfig.
 
-trait ModuleParameterSet {
-    fn count(&self) -> usize;
-    fn name(&self, idx: usize) -> String;
-    fn range(&self, idx: usize) -> (f32, f32);
-}
 
-#[derive(Debug, Clone, PartialEq)]
-struct Module<PS> where PS: ModuleParameterSet {
-    name:          String,
-    parameter_set: Box<PS>,
-    values:        Vec<f32>,
-}
+- Parameters are just one large array of f32
+- Indexes are per device (each device has a index <-> name mapping for access)
+- values are calc'ed from the signal regs and inserted at their index.
+- also static values are calced that way
+- make a configurable link of static values and a GUI element somehow
+    - should also be able to set values of static registers?!
+      (maybe some static input Op, that acts as device with inputs?)
+    => have an array of OpIn's for the device, device communicates the mapping,
+       have one global signal device with customizable mapping
+- configuration by wlambda
 
-#[derive(Debug, Clone, PartialEq)]
-struct ModuleChain<PS> where PS: ModuleParameterSet {
-    name:    String,
-    modules: Vec<Module<PS>>,
-}
 
-#[derive(Debug, Clone, PartialEq)]
-struct ModuleParamSelection {
-    chain_name: String,
-    mod_name:   String,
-    param_idx:  usize,
-}
+
+*/
 
 struct GGEZPainter {
     reg_view_font: graphics::Font,
@@ -152,6 +146,114 @@ impl<'b> wdem_tracker::gui_painter::GUIPainter for GGEZGUIPainter<'b> {
     fn get_area_size(&mut self) -> (f32, f32) { self.area }
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub enum OperatorInputMode {
+    Value(f32),
+    RegInfo(String),
+}
+
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct OperatorInputSettings {
+    pub specs:        Vec<(DemOpIOSpec, OpInfo)>,
+    pub groups:       Vec<(String, Vec<(DemOpIOSpec, OpInfo)>)>,
+                    //     x,   y,   w,   h,   grp_i, in_i
+        active_boxes: Vec<(f32, f32, f32, f32, usize, usize)>,
+}
+
+impl OperatorInputSettings {
+    fn new() -> Self {
+        OperatorInputSettings {
+            specs:         Vec::new(),
+            groups:        Vec::new(),
+            active_boxes:  Vec::new(),
+        }
+    }
+
+    pub fn update_from_spec(&mut self, specs: Vec<(DemOpIOSpec, OpInfo)>) {
+        self.specs = specs;
+        self.groups = Vec::new();
+
+        for iv in self.specs.iter() {
+            let group = &iv.1.group;
+            if group.index <= self.groups.len() {
+                self.groups.resize(group.index + 1, ("".to_string(), Vec::new()));
+            }
+        }
+
+        for i in 0..self.groups.len() {
+            let ops : Vec<(DemOpIOSpec, OpInfo)> =
+                self.specs
+                    .iter()
+                    .filter(|o| o.1.group.index == i)
+                    .map(|o| o.clone())
+                    .collect();
+
+            if ops.is_empty() { continue; }
+
+            let group = ops[0].1.group.clone();
+
+            self.groups[i] = (group.name.clone(), ops);
+        }
+    }
+
+    fn draw_op<P>(&mut self, p: &mut P, op: (DemOpIOSpec, OpInfo)) -> f32
+        where P: wdem_tracker::gui_painter::GUIPainter {
+        let text_h : f32 = 10.0;
+        let mut y : f32  = 0.0;
+        let mut _y2 : f32 = 0.0;
+
+        for (i, is) in op.0.input_values.iter().zip(op.0.inputs.iter()) {
+            let text = match i {
+                OpIn::Constant(v) => {
+                    format!("{:0.2}", *v)
+                },
+                OpIn::Reg(u) =>
+                    format!("r{}", *u),
+                OpIn::RegMix2(u, u2, f) =>
+                    format!("r{}x{:0.2}[{:0.2}]", *u, *u2, *f),
+                OpIn::RegAdd(u, f) =>
+                    format!("r{}+[{:0.2}]", *u, *f),
+                OpIn::RegMul(u, f) =>
+                    format!("r{}*[{:0.2}]", *u, *f),
+                OpIn::RegAddMul(u, f, f2) =>
+                    format!("(r{}+[{:0.2}])*[{:0.2}]", *u, *f, *f2),
+                OpIn::RegMulAdd(u, f, f2) =>
+                    format!("(r{}*[{:0.2}])+[{:0.2}]", *u, *f, *f2),
+                OpIn::RegLerp(u, f, f2) =>
+                    format!("r{}/[{:0.2}][{:0.2}]", *u, *f, *f2),
+                OpIn::RegSStep(u, f, f2) =>
+                    format!("r{}~[{:0.2}][{:0.2}]", *u, *f, *f2),
+                OpIn::RegMap(u, f, f2, g, g2) =>
+                    format!("r{}[{:0.2}-{:0.2}]->[{:0.2}-{:0.2}]", *u, *f, *f2, *g, *g2),
+            };
+
+            p.draw_text(
+                [1.0, 0.3, 0.8, 1.0], [0.0, y], text_h,
+                format!("{}: {}", is.name, text));
+
+            y += text_h;
+        }
+
+        y
+    }
+
+    pub fn draw<P>(&mut self, p: &mut P) where P: wdem_tracker::gui_painter::GUIPainter {
+        let mut y = 0.0;
+        let text_h = 10.0;
+
+        for grp in self.groups.iter() {
+            p.draw_text([1.0, 1.0, 1.0, 1.0], [0.0, y], text_h, grp.0.clone());
+            y += text_h;
+//            for 
+//            p.draw_text(grp.0
+        }
+
+        // draw groups as rows and names
+        // an op is a box with a title and an input col and an output col
+    }
+}
+
 struct Output {
     values:         Vec<f32>,
     pos:            i32,
@@ -183,8 +285,10 @@ fn start_tracker_thread(
 
     std::thread::spawn(move || {
 
-        let mut sim = signals::Simulator::new(1);
-        let sin1_out_reg = sim.new_op(0, "sin").unwrap();
+        let mut sim = Simulator::new(1);
+        sim.add_group("globals");
+        let sin1_out_reg = sim.new_op(0, "sin", "Sin1", 0).unwrap();
+
         println!("SIN OUT REG : {}", sin1_out_reg);
 
         let mut o = Output { values: Vec::new(), pos: 0, song_pos_s: 0.0 };
@@ -344,18 +448,18 @@ enum InputMode {
 }
 
 struct WDemTrackerGUI {
-    tracker: Rc<RefCell<Tracker<ThreadTrackSync>>>,
-    editor:  TrackerEditor<ThreadTrackSync>,
-    painter: Rc<RefCell<GGEZPainter>>,
-    force_redraw: bool,
+    tracker:            Rc<RefCell<Tracker<ThreadTrackSync>>>,
+    editor:             TrackerEditor<ThreadTrackSync>,
+    painter:            Rc<RefCell<GGEZPainter>>,
+    force_redraw:       bool,
     tracker_thread_out: std::sync::Arc<std::sync::Mutex<Output>>,
-    i: i32,
-    mode: InputMode,
-    step: i32,
-    scopes: Scopes,
-    num_txt: String,
-    octave: u8,
-    status_line: String,
+    i:                  i32,
+    mode:               InputMode,
+    step:               i32,
+    scopes:             Scopes,
+    num_txt:            String,
+    octave:             u8,
+    status_line:        String,
 }
 
 impl WDemTrackerGUI {
@@ -370,21 +474,21 @@ impl WDemTrackerGUI {
         let font = graphics::Font::new(ctx, "/DejaVuSansMono.ttf").unwrap();
         let trk = Rc::new(RefCell::new(Tracker::new(sync)));
         WDemTrackerGUI {
-            tracker: trk.clone(),
-            editor: TrackerEditor::new(trk),
+            tracker:            trk.clone(),
+            editor:             TrackerEditor::new(trk),
             tracker_thread_out: out,
+            force_redraw:       true,
+            mode:               InputMode::Normal,
+            step:               0,
+            i:                  0,
+            num_txt:            String::from(""),
+            octave:             4,
+            status_line:        String::from(""),
+            scopes,
             painter: Rc::new(RefCell::new(GGEZPainter {
                 text_cache: std::collections::HashMap::new(),
                 reg_view_font: font,
             })),
-            scopes,
-            force_redraw: true,
-            mode: InputMode::Normal,
-            step: 0,
-            i: 0,
-            num_txt: String::from(""),
-            octave: 4,
-            status_line: String::from(""),
         }
     }
 
@@ -531,7 +635,7 @@ impl EventHandler for WDemTrackerGUI {
                     '5' => { note = (self.octave + 2) * 12 + 6;  }, // F#
                     't' => { note = (self.octave + 2) * 12 + 7;  }, // G
                     '6' => { note = (self.octave + 2) * 12 + 8;  }, // G#
-                    'y' => { note = (self.octave + 2) * 12 + 9;  }, // A
+                    'z' => { note = (self.octave + 2) * 12 + 9;  }, // A
                     '7' => { note = (self.octave + 2) * 12 + 10; }, // A#
                     'u' => { note = (self.octave + 2) * 12 + 11; }, // B
 

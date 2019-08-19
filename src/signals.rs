@@ -1,6 +1,6 @@
 use wlambda::vval::VVal;
-use wdem_tracker::scopes::SampleRow;
-use wdem_tracker::scopes::SCOPE_SAMPLES;
+use crate::scopes::SampleRow;
+use crate::scopes::SCOPE_SAMPLES;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum OpIn {
@@ -120,13 +120,38 @@ impl OpIn {
     }
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub struct DemOpPort {
+    pub min: f32,
+    pub max: f32,
+    pub name: String,
+}
+
+impl DemOpPort {
+    pub fn new(name: &str, min: f32, max: f32) -> Self {
+        DemOpPort { name: name.to_string(), min, max }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct DemOpIOSpec {
+    pub inputs:  Vec<DemOpPort>,
+    pub input_values: Vec<OpIn>,
+    pub outputs: Vec<DemOpPort>,
+    pub output_regs: Vec<usize>,
+}
+
 pub trait DemOp {
-    fn input_count(&self) -> usize;
-    fn output_count(&self) -> usize;
+    fn io_spec(&self) -> DemOpIOSpec;
+
     fn init_regs(&mut self, start_reg: usize, regs: &mut [f32]);
+
     fn get_output_reg(&mut self, name: &str) -> Option<usize>;
     fn set_input(&mut self, name: &str, to: OpIn) -> bool;
     fn exec(&mut self, t: f32, regs: &mut [f32]);
+
+    fn input_count(&self) -> usize { self.io_spec().inputs.len() }
+    fn output_count(&self) -> usize { self.io_spec().outputs.len() }
 }
 
 pub struct DoSin {
@@ -150,12 +175,26 @@ impl DoSin {
 }
 
 impl DemOp for DoSin {
-    fn input_count(&self) -> usize { 4 }
-    fn output_count(&self) -> usize { 1 }
+    fn io_spec(&self) -> DemOpIOSpec {
+        DemOpIOSpec {
+            inputs: vec![
+                DemOpPort::new("amp",    0.0, 9999.0),
+                DemOpPort::new("phase", -2.0 * std::f32::consts::PI,
+                                         2.0 * std::f32::consts::PI),
+                DemOpPort::new("vert",  -9999.0,  9999.0),
+                DemOpPort::new("freq",      0.0, 11025.0),
+            ],
+            input_values: vec![self.amp, self.phase, self.vert, self.f],
+            outputs: vec![
+                DemOpPort::new("out", -9999.0, 9999.0),
+            ],
+            output_regs: vec![self.out],
+        }
+    }
 
     fn init_regs(&mut self, start_reg: usize, regs: &mut [f32]) {
         regs[start_reg] = 0.0;
-        self.out   = start_reg;
+        self.out = start_reg;
     }
 
     fn get_output_reg(&mut self, name: &str) -> Option<usize> {
@@ -185,9 +224,24 @@ impl DemOp for DoSin {
     }
 }
 
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct OpGroup {
+    pub name: String,
+    pub index: usize,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct OpInfo {
+    pub name:  String,
+    pub group: OpGroup,
+}
+
 pub struct Simulator {
     pub regs:               Vec<f32>,
     pub ops:                Vec<Box<dyn DemOp>>,
+    pub op_infos:           Vec<OpInfo>,
+    pub op_groups:          Vec<OpGroup>,
     pub sample_row:         SampleRow,
     pub scope_sample_len:   usize,
     pub scope_sample_pos:   usize,
@@ -199,6 +253,8 @@ impl Simulator {
         let mut sim = Simulator {
             regs:               Vec::new(),
             ops:                Vec::new(),
+            op_groups:          Vec::new(),
+            op_infos:           Vec::new(),
             sample_row:         SampleRow::new(),
             scope_sample_len:   SCOPE_SAMPLES,
             scope_sample_pos:   0,
@@ -208,31 +264,48 @@ impl Simulator {
         sim
     }
 
+    pub fn add_group(&mut self, name: &str) {
+        self.op_groups.push(OpGroup { name: name.to_string(), index: self.op_groups.len() });
+    }
+
+    pub fn get_specs(&self) -> Vec<(DemOpIOSpec, OpInfo)> {
+        self.ops
+            .iter()
+            .enumerate()
+            .map(|(i, o)|
+                (o.io_spec(), self.op_infos[i].clone()))
+            .collect()
+    }
+
     pub fn copy_reserved_values(&mut self, input: &[f32]) {
         if input.len() == self.reserved_reg_len {
             self.regs[0..self.reserved_reg_len].copy_from_slice(input);
         }
     }
 
-    pub fn add_op(&mut self, idx: usize, mut op: Box<dyn DemOp>) -> Option<usize> {
+    pub fn add_op(&mut self, idx: usize, mut op: Box<dyn DemOp>, op_name: String, group_index: usize) -> Option<usize> {
         let new_start_reg = self.regs.len();
         let new_reg_count = self.regs.len() + op.output_count();
         self.regs.resize(new_reg_count, 0.0);
         op.init_regs(new_start_reg, &mut self.regs[..]);
         let out_reg = op.get_output_reg("out");
 
+        self.op_infos.push(OpInfo {
+            name: op_name,
+            group: self.op_groups[group_index].clone()
+        });
         self.ops.insert(idx, op);
 
         out_reg
     }
 
-    pub fn new_op(&mut self, idx: usize, t: &str) -> Option<usize> {
+    pub fn new_op(&mut self, idx: usize, t: &str, name: &str, group_index: usize) -> Option<usize> {
         let o : Box<dyn DemOp> = match t {
             "sin" => { Box::new(DoSin::new()) },
             _     => { return None; },
         };
 
-        self.add_op(idx, o)
+        self.add_op(idx, o, name.to_string(), group_index)
     }
 
     pub fn set_reg(&mut self, idx: usize, v: f32) -> bool {
