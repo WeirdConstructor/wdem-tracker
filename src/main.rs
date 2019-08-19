@@ -153,24 +153,102 @@ pub enum OperatorInputMode {
 }
 
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug)]
 pub struct OperatorInputSettings {
+        simcom:       SimulatorCommunicator,
     pub specs:        Vec<(DemOpIOSpec, OpInfo)>,
     pub groups:       Vec<(String, Vec<(DemOpIOSpec, OpInfo)>)>,
                     //     x,   y,   w,   h,   grp_i, in_i
         active_boxes: Vec<(f32, f32, f32, f32, usize, usize)>,
 }
 
+fn draw_op<P>(p: &mut P, op: &(DemOpIOSpec, OpInfo)) -> f32
+        where P: wdem_tracker::gui_painter::GUIPainter {
+    let inp_col_w : f32 = 100.0;
+    let text_h : f32 = 10.0;
+    let mut y : f32  = 0.0;
+    let mut _y2 : f32 = 0.0;
+
+    let op_h = op.0.input_values.len() as f32 * text_h;
+
+    p.draw_rect(
+        [0.2, 0.2, 0.2, 0.4],
+        [0.0, 0.0],
+        [inp_col_w * 2.0, op_h],
+        true, 0.0);
+
+    p.draw_text(
+        [0.3, 1.0, 0.8, 1.0], [0.0, y], text_h,
+        format!("{}", op.1.name));
+
+    y += text_h;
+
+    for (i, is) in op.0.input_values.iter().zip(op.0.inputs.iter()) {
+        let text = match i {
+            OpIn::Constant(v) => {
+                format!("{:0.2}", *v)
+            },
+            OpIn::Reg(u) =>
+                format!("r{}", *u),
+            OpIn::RegMix2(u, u2, f) =>
+                format!("r{}x{:0.2}[{:0.2}]", *u, *u2, *f),
+            OpIn::RegAdd(u, f) =>
+                format!("r{}+[{:0.2}]", *u, *f),
+            OpIn::RegMul(u, f) =>
+                format!("r{}*[{:0.2}]", *u, *f),
+            OpIn::RegAddMul(u, f, f2) =>
+                format!("(r{}+[{:0.2}])*[{:0.2}]", *u, *f, *f2),
+            OpIn::RegMulAdd(u, f, f2) =>
+                format!("(r{}*[{:0.2}])+[{:0.2}]", *u, *f, *f2),
+            OpIn::RegLerp(u, f, f2) =>
+                format!("r{}/[{:0.2}][{:0.2}]", *u, *f, *f2),
+            OpIn::RegSStep(u, f, f2) =>
+                format!("r{}~[{:0.2}][{:0.2}]", *u, *f, *f2),
+            OpIn::RegMap(u, f, f2, g, g2) =>
+                format!("r{}[{:0.2}-{:0.2}]->[{:0.2}-{:0.2}]", *u, *f, *f2, *g, *g2),
+        };
+
+        p.draw_text(
+            [1.0, 0.3, 0.8, 1.0], [0.0, y], text_h,
+            format!("{:<7}: {}", is.name, text));
+
+        y += text_h;
+    }
+
+    p.draw_lines(
+        [1.0, 1.0, 0.0, 1.0],
+        [inp_col_w, 0.0],
+        &vec![[0.0, 0.0], [0.0, y]],
+        false,
+        1.0);
+
+    y
+}
+
 impl OperatorInputSettings {
-    fn new() -> Self {
+    fn new(simcom: SimulatorCommunicator) -> Self {
         OperatorInputSettings {
+            simcom:        simcom,
             specs:         Vec::new(),
             groups:        Vec::new(),
             active_boxes:  Vec::new(),
         }
     }
 
-    pub fn update_from_spec(&mut self, specs: Vec<(DemOpIOSpec, OpInfo)>) {
+    pub fn update(&mut self) {
+        let r = self.simcom.update(|ev| {
+            if let SimulatorUIEvent::OpSpecUpdate(up) = ev {
+                Some(up)
+            } else { None }
+        });
+
+        if r.is_some() {
+            self.update_from_spec(r.unwrap().unwrap());
+        }
+    }
+
+    fn update_from_spec(&mut self, specs: Vec<(DemOpIOSpec, OpInfo)>) {
+        println!("Updated: {:?}", specs);
         self.specs = specs;
         self.groups = Vec::new();
 
@@ -197,47 +275,6 @@ impl OperatorInputSettings {
         }
     }
 
-    fn draw_op<P>(&mut self, p: &mut P, op: (DemOpIOSpec, OpInfo)) -> f32
-        where P: wdem_tracker::gui_painter::GUIPainter {
-        let text_h : f32 = 10.0;
-        let mut y : f32  = 0.0;
-        let mut _y2 : f32 = 0.0;
-
-        for (i, is) in op.0.input_values.iter().zip(op.0.inputs.iter()) {
-            let text = match i {
-                OpIn::Constant(v) => {
-                    format!("{:0.2}", *v)
-                },
-                OpIn::Reg(u) =>
-                    format!("r{}", *u),
-                OpIn::RegMix2(u, u2, f) =>
-                    format!("r{}x{:0.2}[{:0.2}]", *u, *u2, *f),
-                OpIn::RegAdd(u, f) =>
-                    format!("r{}+[{:0.2}]", *u, *f),
-                OpIn::RegMul(u, f) =>
-                    format!("r{}*[{:0.2}]", *u, *f),
-                OpIn::RegAddMul(u, f, f2) =>
-                    format!("(r{}+[{:0.2}])*[{:0.2}]", *u, *f, *f2),
-                OpIn::RegMulAdd(u, f, f2) =>
-                    format!("(r{}*[{:0.2}])+[{:0.2}]", *u, *f, *f2),
-                OpIn::RegLerp(u, f, f2) =>
-                    format!("r{}/[{:0.2}][{:0.2}]", *u, *f, *f2),
-                OpIn::RegSStep(u, f, f2) =>
-                    format!("r{}~[{:0.2}][{:0.2}]", *u, *f, *f2),
-                OpIn::RegMap(u, f, f2, g, g2) =>
-                    format!("r{}[{:0.2}-{:0.2}]->[{:0.2}-{:0.2}]", *u, *f, *f2, *g, *g2),
-            };
-
-            p.draw_text(
-                [1.0, 0.3, 0.8, 1.0], [0.0, y], text_h,
-                format!("{}: {}", is.name, text));
-
-            y += text_h;
-        }
-
-        y
-    }
-
     pub fn draw<P>(&mut self, p: &mut P) where P: wdem_tracker::gui_painter::GUIPainter {
         let mut y = 0.0;
         let text_h = 10.0;
@@ -245,6 +282,21 @@ impl OperatorInputSettings {
         for grp in self.groups.iter() {
             p.draw_text([1.0, 1.0, 1.0, 1.0], [0.0, y], text_h, grp.0.clone());
             y += text_h;
+
+            let oo = p.get_offs();
+
+            let mut max_op_h = 0.0;
+            for op in grp.1.iter() {
+                let o = p.get_offs();
+                p.set_offs((o.0 + 20.0, o.1 + text_h));
+                let h = draw_op(p, op);
+                if h > max_op_h { max_op_h = h; }
+
+            }
+
+            p.set_offs(oo);
+
+            y += max_op_h;
 //            for 
 //            p.draw_text(grp.0
         }
@@ -278,14 +330,13 @@ impl OutputHandler for Output {
 fn start_tracker_thread(
     ext_out: std::sync::Arc<std::sync::Mutex<Output>>,
     rcv: std::sync::mpsc::Receiver<TrackerSyncMsg>,
-    snd_ui: std::sync::mpsc::Sender<SimulatorUIEvent>) -> Scopes {
+    mut ep: SimulatorCommunicatorEndpoint) -> Scopes {
 
     let sr = Scopes::new();
 
     let rr = sr.sample_row.clone();
 
     std::thread::spawn(move || {
-
         let mut sim = Simulator::new(1);
         sim.add_group("globals");
         let sin1_out_reg = sim.new_op(0, "sin", "Sin1", 0).unwrap();
@@ -298,6 +349,8 @@ fn start_tracker_thread(
         let mut is_playing = true;
         let mut out_updated = false;
         loop {
+            ep.handle_ui_messages(&mut sim);
+
             let r = rcv.try_recv();
             match r {
                 Ok(TrackerSyncMsg::AddTrack(track)) => {
@@ -461,21 +514,27 @@ struct WDemTrackerGUI {
     num_txt:            String,
     octave:             u8,
     status_line:        String,
+    op_inp_set:         OperatorInputSettings,
 }
 
 impl WDemTrackerGUI {
     pub fn new(ctx: &mut Context) -> WDemTrackerGUI {
         let (sync_tx, sync_rx) = std::sync::mpsc::channel::<TrackerSyncMsg>();
-        let (simuiev_tx, simuiev_rx) = std::sync::mpsc::channel::<SimulatorUIEvent>();
+
+        let mut simcom = SimulatorCommunicator::new();
 
         let sync = ThreadTrackSync::new(sync_tx);
         let out = std::sync::Arc::new(std::sync::Mutex::new(Output { values: Vec::new(), pos: 0, song_pos_s: 0.0 }));
 
-        let scopes = start_tracker_thread(out.clone(), sync_rx, simuiev_tx);
+        let scopes =
+            start_tracker_thread(
+                out.clone(),
+                sync_rx,
+                simcom.get_endpoint());
 
         let font = graphics::Font::new(ctx, "/DejaVuSansMono.ttf").unwrap();
         let trk = Rc::new(RefCell::new(Tracker::new(sync)));
-        WDemTrackerGUI {
+        let mut ctx = WDemTrackerGUI {
             tracker:            trk.clone(),
             editor:             TrackerEditor::new(trk),
             tracker_thread_out: out,
@@ -486,12 +545,17 @@ impl WDemTrackerGUI {
             num_txt:            String::from(""),
             octave:             4,
             status_line:        String::from(""),
+            op_inp_set:         OperatorInputSettings::new(simcom),
             scopes,
             painter: Rc::new(RefCell::new(GGEZPainter {
                 text_cache: std::collections::HashMap::new(),
                 reg_view_font: font,
             })),
-        }
+        };
+
+        ctx.op_inp_set.update();
+
+        ctx
     }
 
     pub fn get_status_text(&self) -> String {
@@ -556,6 +620,9 @@ impl EventHandler for WDemTrackerGUI {
                     },
                     'h' => {
                         self.editor.process_input(TrackerInput::TrackLeft);
+                    },
+                    'y' => {
+                        self.op_inp_set.update();
                     },
                     'j' | 'J' => {
                         if is_mod_active(ctx, KeyMods::SHIFT) {
@@ -780,6 +847,9 @@ impl EventHandler for WDemTrackerGUI {
             p.set_offs((0.0, 640.0));
             self.scopes.update_from_sample_row();
             self.scopes.draw_scopes(&mut p);
+
+            p.set_offs((300.0, 640.0));
+            self.op_inp_set.draw(&mut p);
 //            p.draw_lines([1.0, 0.0, 1.0, 1.0], [200.0, 100.0], &vec![[1.0, 10.0], [5.0, 20.0]], false, 0.5);
 //            self.painter.borrow_mut().finish_draw_text(ctx);
         }

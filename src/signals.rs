@@ -247,21 +247,67 @@ pub enum SimulatorUIEvent {
     OpSpecUpdate(Vec<(DemOpIOSpec, OpInfo)>),
 }
 
-pub fn handle_simulator_ui(
-    sim: &mut Simulator,
+#[derive(Debug)]
+pub struct SimulatorCommunicatorEndpoint {
+    tx: std::sync::mpsc::Sender<SimulatorUIEvent>,
     rx: std::sync::mpsc::Receiver<SimulatorUIInput>,
-    tx: std::sync::mpsc::Sender<SimulatorUIEvent>) -> bool
-{
-    let r = rx.try_recv();
-    match r {
-        Ok(SimulatorUIInput::Refresh) => {
-            tx.send(SimulatorUIEvent::OpSpecUpdate(sim.get_specs()));
-        },
-        Err(std::sync::mpsc::TryRecvError::Empty) => (),
-        Err(std::sync::mpsc::TryRecvError::Disconnected) => { return false; }
+}
+
+impl SimulatorCommunicatorEndpoint {
+    pub fn handle_ui_messages(&mut self, sim: &mut Simulator)
+    {
+        let r = self.rx.try_recv();
+        match r {
+            Ok(SimulatorUIInput::Refresh) => {
+                self.tx.send(SimulatorUIEvent::OpSpecUpdate(sim.get_specs()))
+                    .expect("communication with ui thread");
+            },
+            Err(std::sync::mpsc::TryRecvError::Empty) => (),
+            Err(std::sync::mpsc::TryRecvError::Disconnected) => (),
+        }
     }
 
-    true
+}
+
+#[derive(Debug)]
+pub struct SimulatorCommunicator {
+    tx: std::sync::mpsc::Sender<SimulatorUIInput>,
+    rx: std::sync::mpsc::Receiver<SimulatorUIEvent>,
+    ep: Option<SimulatorCommunicatorEndpoint>,
+}
+
+impl SimulatorCommunicator {
+    pub fn new() -> Self {
+        let (simuiin_tx, simuiin_rx) = std::sync::mpsc::channel::<SimulatorUIInput>();
+        let (simuiev_tx, simuiev_rx) = std::sync::mpsc::channel::<SimulatorUIEvent>();
+
+        SimulatorCommunicator {
+            tx: simuiin_tx,
+            rx: simuiev_rx,
+            ep: Some(SimulatorCommunicatorEndpoint {
+                tx: simuiev_tx,
+                rx: simuiin_rx,
+            }),
+        }
+    }
+
+    pub fn get_endpoint(&mut self) -> SimulatorCommunicatorEndpoint {
+        std::mem::replace(&mut self.ep, None)
+        .expect("SimulatorCommunicatorEndpoint can only be retrieved once")
+    }
+
+    pub fn update<F, T>(&mut self, mut cb: F) -> Option<T>
+        where F: FnMut(SimulatorUIEvent) -> T {
+
+        self.tx.send(SimulatorUIInput::Refresh)
+            .expect("communication with backend thread");
+        let r = self.rx.recv();
+        if let Ok(ev) = r {
+            Some(cb(ev))
+        } else {
+            None
+        }
+    }
 }
 
 pub struct Simulator {
