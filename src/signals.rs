@@ -135,6 +135,7 @@ impl DemOpPort {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct DemOpIOSpec {
+    pub index:   usize,
     pub inputs:  Vec<DemOpPort>,
     pub input_values: Vec<OpIn>,
     pub outputs: Vec<DemOpPort>,
@@ -142,7 +143,7 @@ pub struct DemOpIOSpec {
 }
 
 pub trait DemOp {
-    fn io_spec(&self) -> DemOpIOSpec;
+    fn io_spec(&self, index: usize) -> DemOpIOSpec;
 
     fn init_regs(&mut self, start_reg: usize, regs: &mut [f32]);
 
@@ -150,8 +151,8 @@ pub trait DemOp {
     fn set_input(&mut self, name: &str, to: OpIn) -> bool;
     fn exec(&mut self, t: f32, regs: &mut [f32]);
 
-    fn input_count(&self) -> usize { self.io_spec().inputs.len() }
-    fn output_count(&self) -> usize { self.io_spec().outputs.len() }
+    fn input_count(&self) -> usize { self.io_spec(0).inputs.len() }
+    fn output_count(&self) -> usize { self.io_spec(0).outputs.len() }
 }
 
 pub struct DoSin {
@@ -175,7 +176,7 @@ impl DoSin {
 }
 
 impl DemOp for DoSin {
-    fn io_spec(&self) -> DemOpIOSpec {
+    fn io_spec(&self, index: usize) -> DemOpIOSpec {
         DemOpIOSpec {
             inputs: vec![
                 DemOpPort::new("amp",    0.0, 9999.0),
@@ -189,6 +190,7 @@ impl DemOp for DoSin {
                 DemOpPort::new("out", -9999.0, 9999.0),
             ],
             output_regs: vec![self.out],
+            index,
         }
     }
 
@@ -346,7 +348,7 @@ impl Simulator {
             .iter()
             .enumerate()
             .map(|(i, o)|
-                (o.io_spec(), self.op_infos[i].clone()))
+                (o.io_spec(i), self.op_infos[i].clone()))
             .collect()
     }
 
