@@ -21,6 +21,9 @@ use ggez::event::{self, EventHandler, quit, MouseButton};
 use ggez::graphics;
 use ggez::input::keyboard::{KeyCode, KeyMods, is_mod_active};
 use ggez::input::mouse::button_pressed;
+use ggez::input::mouse::set_cursor_grabbed;
+use ggez::input::mouse::set_cursor_hidden;
+use ggez::input::mouse::set_position;
 
 /* Synth
 
@@ -164,6 +167,7 @@ pub struct OperatorInputSettings {
         highlight: Option<(usize, usize)>,
         selection: Option<(usize, usize)>,
         orig_mpos: [f32; 2],
+        accu_mpos: [f32; 2],
         orig_val:  f32,
 }
 
@@ -227,11 +231,17 @@ fn draw_op<P>(p: &mut P, op: &(DemOpIOSpec, OpInfo), highlight: &Option<(usize, 
         let o = p.get_offs();
         active_zones.push(([o.0, o.1 + y, inp_col_w, text_h], op.0.index, idx));
 
-        let highlighted = if let Some((op_idx, i_idx)) = highlight {
+        let mut highlighted = if let Some((op_idx, i_idx)) = highlight {
             *op_idx == op.0.index && idx == *i_idx
         } else {
             false
         };
+
+        // XXX: Because the mouse cursor is repositioned, we would
+        //      get flickering on neighbour elements.
+        if selection.is_some() {
+            highlighted = false;
+        }
 
         let selected = if let Some((op_idx, i_idx)) = selection {
             *op_idx == op.0.index && idx == *i_idx
@@ -244,7 +254,7 @@ fn draw_op<P>(p: &mut P, op: &(DemOpIOSpec, OpInfo), highlight: &Option<(usize, 
             else        { [0.4, 0.4, 0.4, 1.0] },
             [0.0, y],
             [inp_col_w - 1.0, text_h - 1.0],
-            highlighted,
+            !selected && highlighted,
             0.5);
 
         p.draw_text(
@@ -283,11 +293,12 @@ impl OperatorInputSettings {
             highlight:     None,
             selection:     None,
             orig_mpos:     [0.0, 0.0],
+            accu_mpos:     [0.0, 0.0],
             orig_val:      0.0,
         }
     }
 
-    pub fn handle_mouse_move(&mut self, x: f32, y: f32, button_is_down: bool) {
+    pub fn handle_mouse_move(&mut self, x: f32, y: f32, xr: f32, yr: f32, button_is_down: bool) -> bool {
         if !button_is_down { self.selection = None; }
 
         let old_highlight = self.highlight;
@@ -307,18 +318,28 @@ impl OperatorInputSettings {
                    && old_highlight == self.highlight {
 
                     self.orig_mpos = [x, y];
+                    self.accu_mpos = [0.0, 0.0];
                     self.selection = self.highlight;
                     self.orig_val  = self.get_selection_val();
+                    return true;
                 }
                 break;
             }
         }
 
         if self.selection.is_some() && button_is_down {
-            let ampli = (self.orig_mpos[1] - y as f32) / 100.0;
+            self.accu_mpos[0] += xr;
+            self.accu_mpos[1] += yr;
+
+            println!("ACCU {}", self.accu_mpos[1]);
+
+            let ampli = self.accu_mpos[1] as f32 / 100.0;
             let s = self.selection.unwrap();
             self.set_input_val(s.0, s.1, self.orig_val + ampli);
+            return true;
         }
+
+        false
     }
 
     pub fn set_input_val(&mut self, op_idx: usize, i_idx: usize, val: f32) {
@@ -713,7 +734,14 @@ impl EventHandler for WDemTrackerGUI {
 //    }
 
     fn mouse_motion_event(&mut self, ctx: &mut Context, x: f32, y: f32, xr: f32, yr: f32) {
-        self.op_inp_set.handle_mouse_move(x, y, button_pressed(ctx, MouseButton::Left));
+        if self.op_inp_set.handle_mouse_move(x, y, xr, yr, button_pressed(ctx, MouseButton::Left)) {
+            set_cursor_grabbed(ctx, true);
+            set_cursor_hidden(ctx, true);
+            set_position(ctx, self.op_inp_set.orig_mpos);
+        } else {
+            set_cursor_grabbed(ctx, false);
+            set_cursor_hidden(ctx, false);
+        }
     }
 
     fn text_input_event(&mut self, ctx: &mut Context, character: char) {
