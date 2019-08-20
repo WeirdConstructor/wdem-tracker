@@ -158,12 +158,13 @@ pub enum OperatorInputMode {
 pub struct OperatorInputSettings {
         simcom:       SimulatorCommunicator,
     pub specs:        Vec<(DemOpIOSpec, OpInfo)>,
-    pub groups:       Vec<(String, Vec<(DemOpIOSpec, OpInfo)>)>,
+    pub groups:       Vec<(String, Vec<usize>)>,
                     //     x/y/w/h,  op_i,  in_i
         active_zones: Vec<([f32; 4], usize, usize)>,
         highlight: Option<(usize, usize)>,
         selection: Option<(usize, usize)>,
         orig_mpos: [f32; 2],
+        orig_val:  f32,
 }
 
 fn draw_op<P>(p: &mut P, op: &(DemOpIOSpec, OpInfo), highlight: &Option<(usize, usize)>, selection: &Option<(usize, usize)>) -> (f32, f32, Vec<([f32; 4], usize, usize)>)
@@ -282,6 +283,7 @@ impl OperatorInputSettings {
             highlight:     None,
             selection:     None,
             orig_mpos:     [0.0, 0.0],
+            orig_val:      0.0,
         }
     }
 
@@ -306,6 +308,7 @@ impl OperatorInputSettings {
 
                     self.orig_mpos = [x, y];
                     self.selection = self.highlight;
+                    self.orig_val  = self.get_selection_val();
                 }
                 break;
             }
@@ -314,9 +317,7 @@ impl OperatorInputSettings {
         if self.selection.is_some() && button_is_down {
             let ampli = (self.orig_mpos[1] - y as f32) / 100.0;
             let s = self.selection.unwrap();
-            let mut v = self.get_input_val(s.0, s.1);
-            v += ampli;
-            self.set_input_val(s.0, s.1, v);
+            self.set_input_val(s.0, s.1, self.orig_val + ampli);
         }
     }
 
@@ -324,6 +325,15 @@ impl OperatorInputSettings {
         let iname = self.specs[op_idx].0.inputs[i_idx].name.clone();
         self.specs[op_idx].0.input_values[i_idx] = OpIn::Constant(val);
         self.simcom.set_op_input(op_idx, &iname, OpIn::Constant(val));
+    }
+
+    pub fn get_selection_val(&self) -> f32 {
+        if self.selection.is_some() {
+            let s = self.selection.unwrap();
+            self.get_input_val(s.0, s.1)
+        } else {
+            0.0
+        }
     }
 
     pub fn get_input_val(&self, op_idx: usize, i_idx: usize) -> f32 {
@@ -359,16 +369,16 @@ impl OperatorInputSettings {
         }
 
         for i in 0..self.groups.len() {
-            let ops : Vec<(DemOpIOSpec, OpInfo)> =
+            let ops : Vec<usize> =
                 self.specs
                     .iter()
                     .filter(|o| o.1.group.index == i)
-                    .map(|o| o.clone())
+                    .map(|o| o.0.index)
                     .collect();
 
             if ops.is_empty() { continue; }
 
-            let group = ops[0].1.group.clone();
+            let group = self.specs[ops[0]].1.group.clone();
 
             self.groups[i] = (group.name.clone(), ops);
         }
@@ -387,7 +397,8 @@ impl OperatorInputSettings {
             let oo = p.get_offs();
 
             let mut max_op_h = 0.0;
-            for op in grp.1.iter() {
+            for op_i in grp.1.iter() {
+                let op = &self.specs[*op_i];
                 let o = p.get_offs();
                 p.set_offs((o.0, o.1 + text_h));
 
