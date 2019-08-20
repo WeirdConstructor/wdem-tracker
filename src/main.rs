@@ -166,7 +166,6 @@ pub struct OperatorInputSettings {
         active_zones: Vec<([f32; 4], usize, usize)>,
         highlight: Option<(usize, usize)>,
         selection: Option<(usize, usize)>,
-        orig_mpos: [f32; 2],
         accu_mpos: [f32; 2],
         orig_val:  f32,
 }
@@ -292,7 +291,6 @@ impl OperatorInputSettings {
             active_zones:  Vec::new(),
             highlight:     None,
             selection:     None,
-            orig_mpos:     [0.0, 0.0],
             accu_mpos:     [0.0, 0.0],
             orig_val:      0.0,
         }
@@ -317,7 +315,6 @@ impl OperatorInputSettings {
                    && self.selection.is_none()
                    && old_highlight == self.highlight {
 
-                    self.orig_mpos = [x, y];
                     self.accu_mpos = [0.0, 0.0];
                     self.selection = self.highlight;
                     self.orig_val  = self.get_selection_val();
@@ -649,6 +646,7 @@ struct WDemTrackerGUI {
     num_txt:            String,
     octave:             u8,
     status_line:        String,
+    orig_mpos:          Option<[f32; 2]>,
     op_inp_set:         OperatorInputSettings,
 }
 
@@ -679,6 +677,7 @@ impl WDemTrackerGUI {
             i:                  0,
             num_txt:            String::from(""),
             octave:             4,
+            orig_mpos:          None,
             status_line:        String::from(""),
             op_inp_set:         OperatorInputSettings::new(simcom),
             scopes,
@@ -733,14 +732,26 @@ impl EventHandler for WDemTrackerGUI {
 //    fn mouse_button_down_event(&mut self, _ctx: &mut Context, button: MouseButton, x: f32, y: f32) {
 //    }
 
-    fn mouse_motion_event(&mut self, ctx: &mut Context, x: f32, y: f32, xr: f32, yr: f32) {
-        if self.op_inp_set.handle_mouse_move(x, y, xr, yr, button_pressed(ctx, MouseButton::Left)) {
-            set_cursor_grabbed(ctx, true);
+    fn mouse_motion_event(&mut self, ctx: &mut Context, x: f32, y: f32,
+                          xr: f32, yr: f32) {
+
+        let mouse_is_grabbed =
+            self.op_inp_set.handle_mouse_move(
+                x, y, xr, yr, button_pressed(ctx, MouseButton::Left));
+
+        if mouse_is_grabbed {
+            if self.orig_mpos.is_none() {
+                self.orig_mpos = Some([x, y]);
+            }
+
+            set_cursor_grabbed(ctx, true).expect("mouse ok");
             set_cursor_hidden(ctx, true);
-            set_position(ctx, self.op_inp_set.orig_mpos);
+            set_position(ctx, self.orig_mpos.unwrap()).expect("mouse ok");
+
         } else {
-            set_cursor_grabbed(ctx, false);
+            set_cursor_grabbed(ctx, false).expect("mouse ok");
             set_cursor_hidden(ctx, false);
+            self.orig_mpos = None;
         }
     }
 
