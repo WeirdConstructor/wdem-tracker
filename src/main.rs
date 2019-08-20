@@ -311,9 +311,27 @@ impl OperatorInputSettings {
             }
         }
 
-//        if self.selection.is_some() && button_is_down {
-//            let ampli
-//        }
+        if self.selection.is_some() && button_is_down {
+            let ampli = (self.orig_mpos[1] - y as f32) / 100.0;
+            let s = self.selection.unwrap();
+            let mut v = self.get_input_val(s.0, s.1);
+            v += ampli;
+            self.set_input_val(s.0, s.1, v);
+        }
+    }
+
+    pub fn set_input_val(&mut self, op_idx: usize, i_idx: usize, val: f32) {
+        let iname = self.specs[op_idx].0.inputs[i_idx].name.clone();
+        self.specs[op_idx].0.input_values[i_idx] = OpIn::Constant(val);
+        self.simcom.set_op_input(op_idx, &iname, OpIn::Constant(val));
+    }
+
+    pub fn get_input_val(&self, op_idx: usize, i_idx: usize) -> f32 {
+        if let OpIn::Constant(v) = self.specs[op_idx].0.input_values[i_idx] {
+            v
+        } else {
+            0.0
+        }
     }
 
     pub fn update(&mut self) {
@@ -680,8 +698,8 @@ impl EventHandler for WDemTrackerGUI {
         }
     }
 
-    fn mouse_button_down_event(&mut self, ctx: &mut Context, button: MouseButton, x: f32, y: f32) {
-    }
+//    fn mouse_button_down_event(&mut self, _ctx: &mut Context, button: MouseButton, x: f32, y: f32) {
+//    }
 
     fn mouse_motion_event(&mut self, ctx: &mut Context, x: f32, y: f32, xr: f32, yr: f32) {
         self.op_inp_set.handle_mouse_move(x, y, button_pressed(ctx, MouseButton::Left));
