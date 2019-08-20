@@ -163,6 +163,7 @@ pub struct OperatorInputSettings {
         active_zones: Vec<([f32; 4], usize, usize)>,
         highlight: Option<(usize, usize)>,
         selection: Option<(usize, usize)>,
+        orig_mpos: [f32; 2],
 }
 
 fn draw_op<P>(p: &mut P, op: &(DemOpIOSpec, OpInfo), highlight: &Option<(usize, usize)>, selection: &Option<(usize, usize)>) -> (f32, f32, Vec<([f32; 4], usize, usize)>)
@@ -280,6 +281,7 @@ impl OperatorInputSettings {
             active_zones:  Vec::new(),
             highlight:     None,
             selection:     None,
+            orig_mpos:     [0.0, 0.0],
         }
     }
 
@@ -302,11 +304,16 @@ impl OperatorInputSettings {
                    && self.selection.is_none()
                    && old_highlight == self.highlight {
 
+                    self.orig_mpos = [x, y];
                     self.selection = self.highlight;
                 }
                 break;
             }
         }
+
+//        if self.selection.is_some() && button_is_down {
+//            let ampli
+//        }
     }
 
     pub fn update(&mut self) {

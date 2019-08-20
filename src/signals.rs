@@ -242,6 +242,7 @@ pub struct OpInfo {
 #[derive(Debug, PartialEq, Clone)]
 pub enum SimulatorUIInput {
     Refresh,
+    SetOpInput(usize, String, OpIn),
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -260,6 +261,11 @@ impl SimulatorCommunicatorEndpoint {
     {
         let r = self.rx.try_recv();
         match r {
+            Ok(SimulatorUIInput::SetOpInput(idx, in_name, op_in)) => {
+                if !sim.set_op_input(idx, &in_name, op_in) {
+                    panic!(format!("Expected op input name {}/{}/{:?}", idx, in_name, op_in));
+                }
+            },
             Ok(SimulatorUIInput::Refresh) => {
                 self.tx.send(SimulatorUIEvent::OpSpecUpdate(sim.get_specs()))
                     .expect("communication with ui thread");
@@ -296,6 +302,12 @@ impl SimulatorCommunicator {
     pub fn get_endpoint(&mut self) -> SimulatorCommunicatorEndpoint {
         std::mem::replace(&mut self.ep, None)
         .expect("SimulatorCommunicatorEndpoint can only be retrieved once")
+    }
+
+    pub fn set_op_input(&mut self, op_index: usize, input_name: &str, op_in: OpIn) {
+        self.tx.send(SimulatorUIInput::SetOpInput(
+                        op_index, input_name.to_string(), op_in))
+            .expect("communication with backend thread");
     }
 
     pub fn update<F, T>(&mut self, mut cb: F) -> Option<T>
