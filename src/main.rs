@@ -162,7 +162,7 @@ pub struct OperatorInputSettings {
         simcom:       SimulatorCommunicator,
     pub specs:        Vec<(DemOpIOSpec, OpInfo)>,
     pub groups:       Vec<(String, Vec<usize>)>,
-                    //     x/y/w/h,  op_i,  in_i
+                    //     x/y/w/h,  op_i,  in_idx
         active_zones: Vec<([f32; 4], usize, usize)>,
         highlight: Option<(usize, usize)>,
         selection: Option<(usize, usize)>,
@@ -296,6 +296,20 @@ impl OperatorInputSettings {
         }
     }
 
+    pub fn hit_zone(&mut self, x: f32, y: f32) -> Option<(usize, usize)> {
+        for az in self.active_zones.iter() {
+            if    x >= (az.0)[0]
+               && y >= (az.0)[1]
+               && x <= ((az.0)[0] + (az.0)[2])
+               && y <= ((az.0)[1] + (az.0)[3]) {
+
+               return Some((az.1, az.2));
+            }
+        }
+
+        None
+    }
+
     pub fn handle_mouse_move(&mut self, x: f32, y: f32, xr: f32, yr: f32, button_is_down: bool) -> bool {
         if !button_is_down { self.selection = None; }
 
@@ -328,9 +342,7 @@ impl OperatorInputSettings {
             self.accu_mpos[0] += xr;
             self.accu_mpos[1] += yr;
 
-            println!("ACCU {}", self.accu_mpos[1]);
-
-            let ampli = self.accu_mpos[1] as f32 / 100.0;
+            let ampli = -(self.accu_mpos[1] as f32 / 100.0);
             let s = self.selection.unwrap();
             self.set_input_val(s.0, s.1, self.orig_val + ampli);
             return true;
@@ -339,10 +351,17 @@ impl OperatorInputSettings {
         false
     }
 
+    pub fn set_input_default(&mut self, op_idx: usize, i_idx: usize) {
+        let iname = self.specs[op_idx].0.inputs[i_idx].name.clone();
+        let default = self.specs[op_idx].0.input_defaults[i_idx];
+        self.specs[op_idx].0.input_values[i_idx] = default;
+        self.simcom.set_op_input(op_idx, &iname, default, false);
+    }
+
     pub fn set_input_val(&mut self, op_idx: usize, i_idx: usize, val: f32) {
         let iname = self.specs[op_idx].0.inputs[i_idx].name.clone();
         self.specs[op_idx].0.input_values[i_idx] = OpIn::Constant(val);
-        self.simcom.set_op_input(op_idx, &iname, OpIn::Constant(val));
+        self.simcom.set_op_input(op_idx, &iname, OpIn::Constant(val), false);
     }
 
     pub fn get_selection_val(&self) -> f32 {
@@ -631,6 +650,7 @@ enum InputMode {
     A,
     B,
     Note,
+    OpInValue(usize, usize),
 }
 
 struct WDemTrackerGUI {
@@ -646,7 +666,7 @@ struct WDemTrackerGUI {
     num_txt:            String,
     octave:             u8,
     status_line:        String,
-    orig_mpos:          Option<[f32; 2]>,
+    grabbed_mpos:       Option<[f32; 2]>,
     op_inp_set:         OperatorInputSettings,
 }
 
@@ -677,7 +697,7 @@ impl WDemTrackerGUI {
             i:                  0,
             num_txt:            String::from(""),
             octave:             4,
-            orig_mpos:          None,
+            grabbed_mpos:       None,
             status_line:        String::from(""),
             op_inp_set:         OperatorInputSettings::new(simcom),
             scopes,
@@ -729,8 +749,20 @@ impl EventHandler for WDemTrackerGUI {
         }
     }
 
-//    fn mouse_button_down_event(&mut self, _ctx: &mut Context, button: MouseButton, x: f32, y: f32) {
-//    }
+    fn mouse_button_down_event(&mut self, _ctx: &mut Context, button: MouseButton, x: f32, y: f32) {
+        if button == MouseButton::Right {
+            if let Some((op_idx, in_idx)) = self.op_inp_set.hit_zone(x, y) {
+                self.mode = InputMode::OpInValue(op_idx, in_idx);
+                self.num_txt = String::from("");
+                self.set_status_text(format!("input value[]"));
+            }
+
+        } else if button == MouseButton::Middle {
+            if let Some((op_idx, in_idx)) = self.op_inp_set.hit_zone(x, y) {
+                self.op_inp_set.set_input_default(op_idx, in_idx);
+            }
+        }
+    }
 
     fn mouse_motion_event(&mut self, ctx: &mut Context, x: f32, y: f32,
                           xr: f32, yr: f32) {
@@ -740,18 +772,18 @@ impl EventHandler for WDemTrackerGUI {
                 x, y, xr, yr, button_pressed(ctx, MouseButton::Left));
 
         if mouse_is_grabbed {
-            if self.orig_mpos.is_none() {
-                self.orig_mpos = Some([x, y]);
+            if self.grabbed_mpos.is_none() {
+                self.grabbed_mpos = Some([x, y]);
             }
 
             set_cursor_grabbed(ctx, true).expect("mouse ok");
             set_cursor_hidden(ctx, true);
-            set_position(ctx, self.orig_mpos.unwrap()).expect("mouse ok");
+            set_position(ctx, self.grabbed_mpos.unwrap()).expect("mouse ok");
 
         } else {
             set_cursor_grabbed(ctx, false).expect("mouse ok");
             set_cursor_hidden(ctx, false);
-            self.orig_mpos = None;
+            self.grabbed_mpos = None;
         }
     }
 
@@ -912,6 +944,22 @@ impl EventHandler for WDemTrackerGUI {
                         u8::from_str_radix(&self.num_txt, 16).unwrap_or(0)));
                     self.mode = InputMode::Normal;
                 }
+            },
+            InputMode::OpInValue(op_idx, in_idx) => {
+                match character {
+                    '-' | '.' | '0'..='9' => {
+                        self.num_txt.push(character);
+                    },
+                    '\r' => {
+                        self.op_inp_set.set_input_val(
+                            op_idx, in_idx,
+                            self.num_txt.parse::<f32>().unwrap_or(0.0));
+                        self.mode = InputMode::Normal;
+                    },
+                    _ => { }
+                }
+
+                self.set_status_text(format!("input value[{}]", self.num_txt));
             },
             InputMode::Value => {
                 match character {

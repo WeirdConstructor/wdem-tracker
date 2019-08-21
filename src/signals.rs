@@ -135,11 +135,12 @@ impl DemOpPort {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct DemOpIOSpec {
-    pub index:   usize,
-    pub inputs:  Vec<DemOpPort>,
-    pub input_values: Vec<OpIn>,
-    pub outputs: Vec<DemOpPort>,
-    pub output_regs: Vec<usize>,
+    pub index:              usize,
+    pub inputs:             Vec<DemOpPort>,
+    pub input_values:       Vec<OpIn>,
+    pub input_defaults:     Vec<OpIn>,
+    pub outputs:            Vec<DemOpPort>,
+    pub output_regs:        Vec<usize>,
 }
 
 pub trait DemOp {
@@ -148,7 +149,7 @@ pub trait DemOp {
     fn init_regs(&mut self, start_reg: usize, regs: &mut [f32]);
 
     fn get_output_reg(&mut self, name: &str) -> Option<usize>;
-    fn set_input(&mut self, name: &str, to: OpIn) -> bool;
+    fn set_input(&mut self, name: &str, to: OpIn, as_default: bool) -> bool;
     fn exec(&mut self, t: f32, regs: &mut [f32]);
 
     fn input_count(&self) -> usize { self.io_spec(0).inputs.len() }
@@ -156,21 +157,23 @@ pub trait DemOp {
 }
 
 pub struct DoSin {
-    amp:    OpIn,
-    phase:  OpIn,
-    vert:   OpIn,
-    f:      OpIn,
-    out:    usize,
+    values:   [OpIn; 4],
+    defaults: [OpIn; 4],
+    out:      usize,
 }
 
 impl DoSin {
     pub fn new() -> Self {
+        let defs = [
+            OpIn::Constant(1.0),
+            OpIn::Constant(0.0),
+            OpIn::Constant(0.0),
+            OpIn::Constant(9.1),
+        ];
         DoSin {
-            amp:   OpIn::Constant(1.0),
-            phase: OpIn::Constant(0.0),
-            vert:  OpIn::Constant(0.0),
-            f:     OpIn::Constant(9.1),
-            out:   0,
+            values:   defs,
+            defaults: [OpIn::Constant(1.0), OpIn::Constant(0.0), OpIn::Constant(0.0), OpIn::Constant(1.0)],
+            out:      0,
         }
     }
 }
@@ -185,7 +188,8 @@ impl DemOp for DoSin {
                 DemOpPort::new("vert",  -9999.0,  9999.0),
                 DemOpPort::new("freq",      0.0, 11025.0),
             ],
-            input_values: vec![self.amp, self.phase, self.vert, self.f],
+            input_values: self.values.to_vec(),
+            input_defaults: self.defaults.to_vec(),
             outputs: vec![
                 DemOpPort::new("out", -9999.0, 9999.0),
             ],
@@ -206,21 +210,22 @@ impl DemOp for DoSin {
         }
     }
 
-    fn set_input(&mut self, name: &str, to: OpIn) -> bool {
+    fn set_input(&mut self, name: &str, to: OpIn, as_default: bool) -> bool {
+        let s = if as_default { &mut self.values } else { &mut self.defaults };
         match name {
-            "amp"   => { self.amp   = to; true },
-            "phase" => { self.phase = to; true },
-            "vert"  => { self.vert  = to; true },
-            "freq"  => { self.f     = to; true },
+            "amp"   => { s[0] = to; true },
+            "phase" => { s[1] = to; true },
+            "vert"  => { s[2] = to; true },
+            "freq"  => { s[3] = to; true },
             _       => false,
         }
     }
 
     fn exec(&mut self, t: f32, regs: &mut [f32]) {
-        let a = self.amp.calc(regs);
-        let p = self.phase.calc(regs);
-        let v = self.vert.calc(regs);
-        let f = self.f.calc(regs);
+        let a = self.values[0].calc(regs);
+        let p = self.values[1].calc(regs);
+        let v = self.values[2].calc(regs);
+        let f = self.values[3].calc(regs);
         regs[self.out] = a * (((f * t) + p).sin() + v);
         //d// println!("OUT: {}, {}", regs[self.out], self.out);
     }
@@ -242,7 +247,7 @@ pub struct OpInfo {
 #[derive(Debug, PartialEq, Clone)]
 pub enum SimulatorUIInput {
     Refresh,
-    SetOpInput(usize, String, OpIn),
+    SetOpInput(usize, String, OpIn, bool),
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -261,8 +266,8 @@ impl SimulatorCommunicatorEndpoint {
     {
         let r = self.rx.try_recv();
         match r {
-            Ok(SimulatorUIInput::SetOpInput(idx, in_name, op_in)) => {
-                if !sim.set_op_input(idx, &in_name, op_in) {
+            Ok(SimulatorUIInput::SetOpInput(idx, in_name, op_in, def)) => {
+                if !sim.set_op_input(idx, &in_name, op_in, def) {
                     panic!(format!("Expected op input name {}/{}/{:?}", idx, in_name, op_in));
                 }
             },
@@ -304,9 +309,9 @@ impl SimulatorCommunicator {
         .expect("SimulatorCommunicatorEndpoint can only be retrieved once")
     }
 
-    pub fn set_op_input(&mut self, op_index: usize, input_name: &str, op_in: OpIn) {
+    pub fn set_op_input(&mut self, op_index: usize, input_name: &str, op_in: OpIn, as_default: bool) {
         self.tx.send(SimulatorUIInput::SetOpInput(
-                        op_index, input_name.to_string(), op_in))
+                        op_index, input_name.to_string(), op_in, as_default))
             .expect("communication with backend thread");
     }
 
@@ -412,11 +417,11 @@ impl Simulator {
         }
     }
 
-    pub fn set_op_input(&mut self, idx: usize, input_name: &str, to: OpIn) -> bool {
+    pub fn set_op_input(&mut self, idx: usize, input_name: &str, to: OpIn, as_default: bool) -> bool {
         if idx >= self.ops.len() {
             return false;
         }
-        self.ops[idx].set_input(input_name, to)
+        self.ops[idx].set_input(input_name, to, as_default)
     }
 
     pub fn exec(&mut self, t: f32, ext_scopes: std::sync::Arc<std::sync::Mutex<SampleRow>>) {
