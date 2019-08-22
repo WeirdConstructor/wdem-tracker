@@ -179,9 +179,9 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
             output.emit_play_line(new_play_line as i32);
 
             for (track_idx, t) in self.tracks.iter_mut().enumerate() {
-                let e = t.play_line(new_play_line, self.lines);
-                if let Some((v, f)) = e {
-                    output.emit_event(track_idx, v, f);
+                let e = t.play_line(new_play_line);
+                if let Some(row) = e {
+                    output.emit_event(track_idx, row.value.unwrap_or((0.0, Interpolation::Step)).0, row.a as u16);
                 }
             }
         }

@@ -40,7 +40,24 @@ impl std::default::Default for InterpolationState {
     fn default() -> Self { InterpolationState::new() }
 }
 
-type RowTuple = (usize, f32, Interpolation, u16, u8);
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Row {
+    pub value: Option<(f32, Interpolation)>,
+    pub a: u8,
+    pub b: u8,
+    pub note: u8,
+}
+
+impl Row {
+    fn new() -> Self {
+        Row {
+            value: None,
+            a: 0,
+            b: 0,
+            note: 0,
+        }
+    }
+}
 
 impl InterpolationState {
     fn new() -> Self {
@@ -58,20 +75,20 @@ impl InterpolationState {
         self.int = Interpolation::Empty;
     }
 
-    fn to_end(&mut self, d: RowTuple, end_line: usize) {
-        self.line_a = d.0;
-        self.val_a  = d.1;
-        self.int    = d.2;
+    fn to_end(&mut self, l: usize, d: &Row, end_line: usize) {
+        self.line_a = l;
+        self.val_a  = d.value.unwrap_or((0.0, Interpolation::Step)).0;
+        self.int    = d.value.unwrap_or((0.0, Interpolation::Step)).1;
         self.line_b = end_line;
         self.val_b  = 0.0;
     }
 
-    fn to_next(&mut self, d: RowTuple, db: RowTuple) {
-        self.line_a = d.0;
-        self.val_a  = d.1;
-        self.int    = d.2;
-        self.line_b = db.0;
-        self.val_b  = db.1;
+    fn to_next(&mut self, l: usize, d: &Row, lb: usize, db: &Row) {
+        self.line_a = l;
+        self.val_a  = d.value.unwrap_or((0.0, Interpolation::Step)).0;
+        self.int    = d.value.unwrap_or((0.0, Interpolation::Step)).1;
+        self.line_b = lb;
+        self.val_b  = db.value.unwrap_or((0.0, Interpolation::Step)).0;
     }
 
     fn desync(&mut self) {
@@ -89,16 +106,23 @@ pub struct Track {
     interpol: InterpolationState,
     // if index is at or above desired key, interpolate
     // else set index = 0 and restart search for right key
-    pub data: Vec<RowTuple>,
+    pub lpp:         usize,
+    pub patterns:    Vec<Vec<Row>>,
+    pub arrangement: Vec<usize>, // arrangement of the patterns
 }
 
 impl Track {
-    pub fn new(name: &str, data: Vec<RowTuple>) -> Self {
+    pub fn new(name: &str, lpp: usize) -> Self {
+        let mut fp = Vec::new();
+        fp.resize(lpp, Row::new());
+
         Track {
-            name: String::from(name),
-            play_pos: PlayPos::Desync,
-            interpol: InterpolationState::new(),
-            data,
+            name:        String::from(name),
+            play_pos:    PlayPos::Desync,
+            interpol:    InterpolationState::new(),
+            patterns:    vec![fp],
+            arrangement: vec![0],
+            lpp,
         }
     }
 
@@ -108,7 +132,9 @@ impl Track {
             name: String::from("parseerr"),
             play_pos: PlayPos::Desync,
             interpol: InterpolationState::new(),
-            data: Vec::new(),
+            patterns: vec![],
+            arrangement: vec![],
+            lpp: 0,
         }))
     }
 
@@ -128,136 +154,126 @@ impl Track {
         }
     }
 
+    pub fn set_arrangement_pattern(&mut self, line: usize, pat_idx: usize) {
+        if pat_idx < self.patterns.len() {
+            self.arrangement[line / self.lpp] = pat_idx;
+        }
+    }
+
+    pub fn touch_pattern_idx(&mut self, pat_idx: usize) {
+        if pat_idx >= self.patterns.len() {
+            let mut fp = Vec::new();
+            fp.resize(self.lpp, Row::new());
+            self.patterns.resize(pat_idx + 1, fp);
+        }
+    }
+
+    pub fn line_count(&self) -> usize {
+        self.arrangement.len() * self.lpp
+    }
+
+    pub fn row(&mut self, line: usize) -> &mut Row {
+        &mut self.patterns[self.arrangement[line / self.lpp]][line % self.lpp]
+    }
+
+    pub fn prev_row_with_value(&mut self, line: usize) -> Option<(usize, Row)> {
+        let mut ll = line;
+        while ll > 0 {
+            let row = &self.patterns[self.arrangement[(ll - 1) / self.lpp]][(ll - 1) % self.lpp];
+            if (*row).value.is_some() {
+                return Some(((ll - 1), *row));
+            }
+            ll -= 1;
+        }
+
+        None
+    }
+
+    pub fn next_row_with_value(&mut self, line: usize) -> Option<(usize, Row)> {
+        let mut ll = line;
+        let lc = self.line_count();
+        while ll <= lc {
+            let row = &self.patterns[self.arrangement[ll / self.lpp]][ll % self.lpp];
+            if (*row).value.is_some() {
+                return Some((ll, *row));
+            }
+            ll += 1;
+        }
+
+        None
+    }
+
+    pub fn touch_row(&mut self, line: usize) -> &mut Row {
+        let a = line / self.lpp;
+        while a >= self.arrangement.len() {
+            self.patterns.push(Vec::new());
+            self.patterns[self.patterns.len() - 1].resize(self.lpp, Row::new());
+            self.arrangement.push(self.patterns.len() - 1);
+        }
+
+        &mut self.patterns[self.arrangement[a]][line % self.lpp]
+    }
+
     pub fn desync(&mut self) {
         self.play_pos = PlayPos::Desync;
         self.interpol.desync();
     }
 
     pub fn remove_value(&mut self, line: usize) {
-        let entry = self.data.iter().enumerate().find(|v| (v.1).0 == line);
-        if let Some((idx, _val)) = entry {
-            self.data.remove(idx);
-            self.desync();
-        }
+        *self.touch_row(line) = Row::new();
+        self.desync();
     }
 
     pub fn set_int(&mut self, line: usize, int: Interpolation) {
-        let entry = self.data.iter_mut().find(|v| v.0 == line);
-        if let Some(val) = entry {
-            val.2 = int;
+        if let Some((v, _i)) = (*self.touch_row(line)).value {
+            (*self.touch_row(line)).value = Some((v, int));
+        } else {
+            (*self.touch_row(line)).value = Some((0.0, int));
         }
-
         self.desync();
     }
 
     pub fn set_note(&mut self, line: usize, value: u8) {
-        let entry = self.data.iter().enumerate().find(|v| (v.1).0 >= line);
-        if let Some((idx, val)) = entry {
-            if val.0 == line {
-                self.data[idx] = (line, val.1, val.2, val.3, value);
-            } else {
-                self.data.insert(idx, (line, 0.0, Interpolation::Step, 0, value));
-            }
-        } else {
-            self.data.push((line, 0.0, Interpolation::Step, 0, value));
-        }
-
+        (*self.touch_row(line)).note = value;
         self.desync();
     }
 
     pub fn set_a(&mut self, line: usize, value: u8) {
-        let entry = self.data.iter().enumerate().find(|v| (v.1).0 >= line);
-        if let Some((idx, val)) = entry {
-            if val.0 == line {
-                self.data[idx] = (line, val.1, val.2, (val.3 & 0xFF00) | (value as u16), val.4);
-            } else {
-                self.data.insert(idx, (line, 0.0, Interpolation::Step, value as u16, 0));
-            }
-        } else {
-            self.data.push((line, 0.0, Interpolation::Step, value as u16, 0));
-        }
-
+        (*self.touch_row(line)).a = value;
         self.desync();
     }
 
     pub fn set_b(&mut self, line: usize, value: u8) {
-        let entry = self.data.iter().enumerate().find(|v| (v.1).0 >= line);
-        if let Some((idx, val)) = entry {
-            if val.0 == line {
-                self.data[idx] = (line, val.1, val.2, (val.3 & 0x00FF) | ((value as u16) << 8), val.4);
-            } else {
-                self.data.insert(idx, (line, 0.0, Interpolation::Step, (value as u16) << 8, 0));
-            }
-        } else {
-            self.data.push((line, 0.0, Interpolation::Step, (value as u16) << 8, 0));
-        }
-
+        (*self.touch_row(line)).b = value;
         self.desync();
     }
 
     pub fn set_value(&mut self, line: usize, value: f32) {
-        let entry = self.data.iter().enumerate().find(|v| (v.1).0 >= line);
-        if let Some((idx, val)) = entry {
-            if val.0 == line {
-                self.data[idx] = (line, value, val.2, val.3, val.4);
-            } else {
-                self.data.insert(idx, (line, value, Interpolation::Step, 0, 0));
-            }
+        if let Some((_v, i)) = (*self.touch_row(line)).value {
+            (*self.touch_row(line)).value = Some((value, i));
         } else {
-            self.data.push((line, value, Interpolation::Step, 0, 0));
+            (*self.touch_row(line)).value = Some((value, Interpolation::Step));
         }
-
         self.desync();
     }
 
-    fn sync_interpol_to_play_line(&mut self, line: usize, end_line: usize) -> Option<(f32, u16)> {
-        match self.play_pos {
-            PlayPos::End     => {
-                if self.data.is_empty() {
-                    self.interpol.clear();
-                } else {
-                    let d = self.data[self.data.len() - 1];
-                    self.interpol.to_end(d, end_line);
-                }
-
-                None
-            },
-            PlayPos::At(idx) => {
-                let d = self.data[idx];
-                if d.0 == line {
-                    if (idx + 1) >= self.data.len() {
-                        self.interpol.to_end(d, end_line);
-                        self.play_pos = PlayPos::End;
-                    } else {
-                        self.interpol.to_next(d, self.data[idx + 1]);
-                        self.play_pos = PlayPos::At(idx + 1);
-                    }
-
-                    Some((d.1, d.3))
-                } else { // assuming here: d.0 > line
-                    if idx == 0 {
-                        self.interpol.to_next(
-                            (0, 0.0, Interpolation::Step, 0, 0), d);
-                    } else {
-                        self.interpol.to_next(
-                            self.data[idx - 1], d);
-                    }
-
-                    None
-                }
-            },
-            _ => None,
-        }
-    }
-
-    fn check_sync(&mut self, line: usize, _end_line: usize) {
-        if self.play_pos == PlayPos::Desync {
-            let entry = self.data.iter().enumerate().find(|v| (v.1).0 >= line);
-            if let Some((idx, _val)) = entry {
-                self.play_pos = PlayPos::At(idx);
+    fn sync_interpol_to_play_line(&mut self, line: usize) -> Option<Row> {
+        if let Some((l_a, row_a)) = self.next_row_with_value(line) {
+            if let Some((l_b, row_b)) = self.prev_row_with_value(line) {
+                self.interpol.to_next(l_a, &row_a, l_b, &row_b);
             } else {
-                self.play_pos = PlayPos::End;
+                self.interpol.to_end(l_a, &row_a, self.line_count() - 1);
             }
+
+            Some(row_a)
+        } else {
+            if let Some((l_b, row_b)) = self.prev_row_with_value(line) {
+                self.interpol.to_end(l_b, &row_b, self.line_count() - 1);
+            } else {
+                self.interpol.clear();
+            }
+
+            None
         }
     }
 
@@ -265,9 +281,8 @@ impl Track {
     /// specified for setting up the interpolations.
     /// Should be called in order of the track events, othewise 
     /// desync() should be called first.
-    pub fn play_line(&mut self, line: usize, end_line: usize) -> Option<(f32, u16)> {
-        self.check_sync(line, end_line);
-        self.sync_interpol_to_play_line(line, end_line)
+    pub fn play_line(&mut self, line: usize) -> Option<Row> {
+        self.sync_interpol_to_play_line(line)
     }
 
     /// Returns the interpolated value of this track at the specified line.
