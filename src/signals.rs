@@ -211,7 +211,7 @@ impl DemOp for DoSin {
     }
 
     fn set_input(&mut self, name: &str, to: OpIn, as_default: bool) -> bool {
-        let s = if as_default { &mut self.values } else { &mut self.defaults };
+        let s = if as_default { &mut self.defaults } else { &mut self.values };
         match name {
             "amp"   => { s[0] = to; true },
             "phase" => { s[1] = to; true },
@@ -267,6 +267,7 @@ impl SimulatorCommunicatorEndpoint {
         let r = self.rx.try_recv();
         match r {
             Ok(SimulatorUIInput::SetOpInput(idx, in_name, op_in, def)) => {
+                println!("SETINPUT: {}", in_name);
                 if !sim.set_op_input(idx, &in_name, op_in, def) {
                     panic!(format!("Expected op input name {}/{}/{:?}", idx, in_name, op_in));
                 }
@@ -418,6 +419,7 @@ impl Simulator {
     }
 
     pub fn set_op_input(&mut self, idx: usize, input_name: &str, to: OpIn, as_default: bool) -> bool {
+        println!("SETSET {} {} {:?}", idx, input_name, to);
         if idx >= self.ops.len() {
             return false;
         }
