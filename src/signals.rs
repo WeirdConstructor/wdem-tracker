@@ -156,6 +156,64 @@ pub trait DemOp {
     fn output_count(&self) -> usize { self.io_spec(0).outputs.len() }
 }
 
+pub struct DoOutProxy {
+    pub values:   std::rc::Rc<std::cell::RefCell<Vec<f32>>>,
+    out_regs: Vec<usize>,
+}
+
+impl DoOutProxy {
+    pub fn new(num_outputs: usize) -> Self {
+        DoOutProxy {
+            values: std::rc::Rc::new(std::cell::RefCell::new(vec![0.0; num_outputs])),
+            out_regs: vec![0, num_outputs],
+        }
+    }
+}
+
+impl DemOp for DoOutProxy {
+    fn io_spec(&self, index: usize) -> DemOpIOSpec {
+        DemOpIOSpec {
+            inputs:         vec![],
+            input_values:   vec![],
+            input_defaults: vec![],
+            outputs:        self.values.borrow().iter().enumerate()
+                                       .map(|(i, _v)|
+                                            DemOpPort::new(&format!("out{}", i), -9999.0, 9999.0))
+                                       .collect(),
+            output_regs:    self.out_regs.clone(),
+            index,
+        }
+    }
+
+    fn init_regs(&mut self, start_reg: usize, regs: &mut [f32]) {
+        for (i, o) in self.out_regs.iter_mut().enumerate() {
+            *o = i + start_reg;
+            regs[*o] = 0.0;
+        }
+    }
+
+    fn get_output_reg(&mut self, name: &str) -> Option<usize> {
+        for i in 0..self.out_regs.len() {
+            if name == format!("out{}", i) {
+                return Some(self.out_regs[i])
+            }
+        }
+
+        None
+    }
+
+    fn set_input(&mut self, _name: &str, _to: OpIn, _as_default: bool) -> bool {
+        false
+    }
+
+    fn exec(&mut self, _t: f32, regs: &mut [f32]) {
+        let v = self.values.borrow();
+        for (i, or) in self.out_regs.iter().enumerate() {
+            regs[*or] = v[i];
+        }
+    }
+}
+
 pub struct DoSin {
     values:   [OpIn; 4],
     defaults: [OpIn; 4],
@@ -172,11 +230,19 @@ impl DoSin {
         ];
         DoSin {
             values:   defs,
-            defaults: [OpIn::Constant(1.0), OpIn::Constant(0.0), OpIn::Constant(0.0), OpIn::Constant(1.0)],
             out:      0,
+            defaults: [
+                OpIn::Constant(1.0),
+                OpIn::Constant(0.0),
+                OpIn::Constant(0.0),
+                OpIn::Constant(1.0)
+            ],
         }
     }
 }
+
+// TODO: Define a DoOutProxy that provides access to a shared vector of values
+//       that will be directly written by the tracker to.
 
 impl DemOp for DoSin {
     fn io_spec(&self, index: usize) -> DemOpIOSpec {
@@ -338,12 +404,11 @@ pub struct Simulator {
     pub sample_row:         SampleRow,
     pub scope_sample_len:   usize,
     pub scope_sample_pos:   usize,
-        reserved_reg_len:   usize,
 }
 
 impl Simulator {
-    pub fn new(reserved_reg_len: usize) -> Self {
-        let mut sim = Simulator {
+    pub fn new() -> Self {
+        let sim = Simulator {
             regs:               Vec::new(),
             ops:                Vec::new(),
             op_groups:          Vec::new(),
@@ -351,9 +416,7 @@ impl Simulator {
             sample_row:         SampleRow::new(),
             scope_sample_len:   SCOPE_SAMPLES,
             scope_sample_pos:   0,
-            reserved_reg_len,
         };
-        sim.regs.resize(reserved_reg_len, 0.0);
         sim
     }
 
@@ -368,12 +431,6 @@ impl Simulator {
             .map(|(i, o)|
                 (o.io_spec(i), self.op_infos[i].clone()))
             .collect()
-    }
-
-    pub fn copy_reserved_values(&mut self, input: &[f32]) {
-        if input.len() == self.reserved_reg_len {
-            self.regs[0..self.reserved_reg_len].copy_from_slice(input);
-        }
     }
 
     pub fn add_op(&mut self, idx: usize, mut op: Box<dyn DemOp>, op_name: String, group_index: usize) -> Option<usize> {

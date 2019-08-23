@@ -458,7 +458,6 @@ impl OperatorInputSettings {
 }
 
 struct Output {
-    values:         Vec<f32>,
     pos:            i32,
     song_pos_s:     f32,
 }
@@ -473,8 +472,6 @@ impl OutputHandler for Output {
         self.pos = play_line;
     }
 
-    fn value_buffer(&mut self) -> &mut Vec<f32> { return &mut self.values; }
-
     fn song_pos(&mut self) -> &mut f32 { return &mut self.song_pos_s; }
 }
 
@@ -488,13 +485,17 @@ fn start_tracker_thread(
     let rr = sr.sample_row.clone();
 
     std::thread::spawn(move || {
-        let mut sim = Simulator::new(1);
+        let mut sim = Simulator::new();
         sim.add_group("globals");
         let sin1_out_reg = sim.new_op(0, "sin", "Sin1", 0).unwrap();
 
+        let oprox = DoOutProxy::new(5);
+        let val_rc = oprox.values.clone();
+        sim.add_op(1, Box::new(oprox), "tracks".to_string(), 0);
+
         println!("SIN OUT REG : {}", sin1_out_reg);
 
-        let mut o = Output { values: Vec::new(), pos: 0, song_pos_s: 0.0 };
+        let mut o = Output { pos: 0, song_pos_s: 0.0 };
         let mut t = Tracker::new(TrackerNopSync { });
 
         let mut is_playing = true;
@@ -541,13 +542,13 @@ fn start_tracker_thread(
                         PlayHeadAction::Play     => { is_playing = true; },
                         PlayHeadAction::NextLine => {
                             println!("NEXT LINE");
-                            t.tick_to_next_line(&mut o);
+                            t.tick_to_next_line(&mut o, &val_rc);
                             out_updated = true;
                             is_playing = false;
                         },
                         PlayHeadAction::PrevLine => {
                             println!("PREV LINE");
-                            t.tick_to_prev_line(&mut o);
+                            t.tick_to_prev_line(&mut o, &val_rc);
                             out_updated = true;
                             is_playing = false;
                         },
@@ -563,7 +564,7 @@ fn start_tracker_thread(
             }
 
             if is_playing {
-                t.tick(&mut o);
+                t.tick(&mut o, &val_rc);
                 out_updated = true;
                 //d// println!("THRD: TICK {}", o.pos);
             }
@@ -571,13 +572,11 @@ fn start_tracker_thread(
             if out_updated {
                 out_updated = false;
 
-                sim.copy_reserved_values(&o.values[..]);
                 sim.exec(o.song_pos_s, rr.clone());
 
                 if let Ok(ref mut m) = ext_out.try_lock() {
                     m.pos        = o.pos;
                     m.song_pos_s = o.song_pos_s;
-                    o.values     = std::mem::replace(&mut m.values, o.values);
                 }
             }
 
@@ -677,7 +676,7 @@ impl WDemTrackerGUI {
         let mut simcom = SimulatorCommunicator::new();
 
         let sync = ThreadTrackSync::new(sync_tx);
-        let out = std::sync::Arc::new(std::sync::Mutex::new(Output { values: Vec::new(), pos: 0, song_pos_s: 0.0 }));
+        let out = std::sync::Arc::new(std::sync::Mutex::new(Output { pos: 0, song_pos_s: 0.0 }));
 
         let scopes =
             start_tracker_thread(
@@ -1042,7 +1041,6 @@ impl EventHandler for WDemTrackerGUI {
 
             graphics::clear(ctx, graphics::BLACK);
             let play_line = self.tracker_thread_out.lock().unwrap().pos;
-            let val = self.tracker_thread_out.lock().unwrap().values.clone();
             self.force_redraw = false;
             let mut p : GGEZGUIPainter =
                 GGEZGUIPainter { p: self.painter.clone(), c: ctx, offs: (0.0, 0.0), area: (0.0, 0.0) };

@@ -15,9 +15,6 @@ pub trait OutputHandler {
     fn emit_event(&mut self, track_idx: usize, val: f32, flags: u16);
     /// Called when the Tracker::tick() function advanced to a new line.
     fn emit_play_line(&mut self, play_line: i32);
-    /// This should return a buffer for storing the interpolated values
-    /// of all tracks. Useful for driving synthesizer automation.
-    fn value_buffer(&mut self) -> &mut Vec<f32>;
     /// Is used to output the song position in seconds.
     fn song_pos(&mut self) -> &mut f32;
 }
@@ -101,6 +98,33 @@ pub tracks:         Vec<Track>,
 pub tick_interval:  usize,
 }
 
+//impl<SYNC> DemOp for Tracker<SYNC> where SYNC: TrackerSync {
+//    fn io_spec(&self, index: usize) -> DemOpIOSpec {
+//        DemOpIOSpec {
+//            inputs: vec![],
+//            input_values: vec![],
+//            input_defaults: vec![],
+//            outputs: self.tracks.iter().map(|t| DemOpPort::new(&t.name, -9999.0, 9999.0)).collect(),
+//            output_regs: self.output_regs,
+//            index,
+//        }
+//    }
+//
+//    fn init_regs(&mut self, start_reg: usize, regs: &mut [f32]) {
+//    }
+//
+//    fn get_output_reg(&mut self, name: &str) -> Option<usize> {
+//        None
+//    }
+//
+//    fn set_input(&mut self, name: &str, to: OpIn, as_default: bool) -> bool {
+//        false
+//    }
+//
+//    fn exec(&mut self, t: f32, regs: &mut [f32]) {
+//    }
+//}
+
 impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
     pub fn new(sync: SYNC) -> Self {
         Tracker {
@@ -169,7 +193,7 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
         self.sync.play_head(a);
     }
 
-    pub fn tick_to_prev_line<T>(&mut self, output: &mut T)
+    pub fn tick_to_prev_line<T>(&mut self, output: &mut T, values: &std::rc::Rc<std::cell::RefCell<Vec<f32>>>)
         where T: OutputHandler {
 
         if self.play_line > 0 {
@@ -178,10 +202,10 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
         };
 
         self.resync_tracks();
-        self.handle_tick_count_change(output);
+        self.handle_tick_count_change(output, values);
     }
 
-    pub fn tick_to_next_line<T>(&mut self, output: &mut T)
+    pub fn tick_to_next_line<T>(&mut self, output: &mut T, values: &std::rc::Rc<std::cell::RefCell<Vec<f32>>>)
         where T: OutputHandler {
 
         self.tick_count =
@@ -191,10 +215,10 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
                 ((self.play_line + 1) * self.tpl as i32) as usize
             };
 
-        self.handle_tick_count_change(output);
+        self.handle_tick_count_change(output, values);
     }
 
-    pub fn handle_tick_count_change<T>(&mut self, output: &mut T)
+    pub fn handle_tick_count_change<T>(&mut self, output: &mut T, values: &std::rc::Rc<std::cell::RefCell<Vec<f32>>>)
         where T: OutputHandler {
 
         let line_count = self.max_line_count();
@@ -226,22 +250,18 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
         self.play_line = new_play_line as i32;
 
         *(output.song_pos()) = self.tick2song_pos_in_s();
-        let buf : &mut Vec<f32> = &mut output.value_buffer();
 
-        if buf.len() < self.tracks.len() {
-            buf.resize(self.tracks.len(), 0.0);
-        }
-
+        let mut v = values.borrow_mut();
         for (idx, t) in self.tracks.iter_mut().enumerate() {
-            buf[idx] = t.get_value(new_play_line, fract_ticks);
+            v[idx] = t.get_value(new_play_line, fract_ticks);
         }
     }
 
-    pub fn tick<T>(&mut self, output: &mut T)
+    pub fn tick<T>(&mut self, output: &mut T, values: &std::rc::Rc<std::cell::RefCell<Vec<f32>>>)
         where T: OutputHandler {
 
         self.tick_count += 1;
-        self.handle_tick_count_change(output);
+        self.handle_tick_count_change(output, values);
     }
 
     pub fn set_int(&mut self, track_idx: usize, line: usize, int: Interpolation) {
