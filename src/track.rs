@@ -48,7 +48,7 @@ impl Row {
         }
     }
 
-    pub fn draw<P>(&self, p: &mut P, state: &mut GUIState) where P: GUIPainter {
+    pub fn draw<P>(&self, p: &mut P, state: &mut GUIState, line: usize) where P: GUIPainter {
         let val_s =
             if let Some((val, int)) = self.value {
                 format!("{:>6.2}{}",
@@ -70,9 +70,17 @@ impl Row {
             n => format!("{:<4}", note2name(n)),
         };
 
-        let s = format!("|{:<02}|{:<4}{:>7}|{:02X} {:02X}|",
+        let s =
+            if state.track_index == 0 {
+                format!("{:<05} |{:<02}|{:<4}{:>7}|{:02X} {:02X}|",
+                        line,
                         state.pattern_index,
-                        note_s, val_s, self.a, self.b);
+                        note_s, val_s, self.a, self.b)
+            } else {
+                format!("|{:<02}|{:<4}{:>7}|{:02X} {:02X}|",
+                        state.pattern_index,
+                        note_s, val_s, self.a, self.b)
+            };
 
         let color =
             if state.cursor_on_line && state.play_on_line {
@@ -94,10 +102,16 @@ impl Row {
                 else             { [0.8, 0.8, 0.8, 1.0] }
             };
 
+        let width =
+            if state.track_index == 0 {
+                FIRST_TRACK_WIDTH
+            } else {
+                TRACK_WIDTH
+            };
         p.draw_rect(
             color,
             [0.0, 0.0],
-            [TRACK_WIDTH - 2.0, ROW_HEIGHT - 2.0], true, 0.5);
+            [width, ROW_HEIGHT], true, 0.5);
         p.draw_text(txt_color, [0.0, 0.0], ROW_HEIGHT * 0.9, s);
     }
 }
@@ -153,19 +167,23 @@ fn note2name(note: u8) -> String {
 pub const TPOS_PAD      : f32 = 50.0;
 pub const TRACK_PAD     : f32 =  0.0;
 pub const TRACK_WIDTH   : f32 = 160.0;
+pub const FIRST_TRACK_WIDTH : f32 = TRACK_WIDTH + 40.0;
 pub const ROW_HEIGHT    : f32 = 15.0;
 pub const ROW_COMPR_FACT : f32 = 0.8;
+pub const CONTEXT_LINES : usize = 6;
 
 pub struct GUIState {
     pub cursor_track_idx:   usize,
     pub cursor_line:        usize,
     pub play_line:          i32,
     pub cursor_on_track:    bool,
+    pub track_index:        usize,
     pub pattern_index:      usize,
     pub play_on_line:       bool,
     pub on_beat:            bool,
     pub lpb:                usize,
     pub cursor_on_line:     bool,
+    pub scroll_offs:        usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -197,6 +215,35 @@ impl Track {
     pub fn draw<P>(&self, p: &mut P, state: &mut GUIState) where P: GUIPainter {
         let rows = (p.get_area_size().1 / (ROW_HEIGHT * ROW_COMPR_FACT)) as usize;
 
+        let lines = self.line_count();
+        let offs =
+            if rows > 2 * CONTEXT_LINES {
+                if state.cursor_line < (state.scroll_offs + CONTEXT_LINES) {
+                    let mut cl : i32 = state.cursor_line as i32;
+                    cl -= CONTEXT_LINES as i32;
+                    if cl < 0 { cl = 0; }
+                    cl as usize
+                } else if state.cursor_line > (state.scroll_offs + (rows - CONTEXT_LINES)) {
+                    let mut cl = state.cursor_line as i32;
+                    cl -= (rows - CONTEXT_LINES) as i32;
+                    if cl < 0 { cl = 0; }
+                    cl as usize
+                } else {
+                    state.scroll_offs
+                }
+            } else {
+                if state.cursor_line >= (rows / 2) {
+                    state.cursor_line - (rows / 2)
+                } else {
+                    0
+                }
+            };
+
+        state.scroll_offs = offs;
+
+        let from = offs;
+        let to   = if from + rows > lines { lines } else { from + rows };
+
         // rows is the nums of displayable lines
         // the window of viewed rows should be stable and only scroll if
         // the cursor is close to the edge of an window.
@@ -210,15 +257,16 @@ impl Track {
             self.name.clone());
         p.add_offs(0.0, ROW_HEIGHT);
 
-        for l in 0..rows {
+        for l in from..to {
             state.play_on_line   = state.play_line == l as i32;
             state.cursor_on_line = state.cursor_on_track && state.cursor_line == l;
             state.on_beat        = (l % state.lpb) == 0;
 
             if let Some((pat_idx, row)) = self.row_checked(l) {
                 state.pattern_index = pat_idx;
-                row.draw(p, state);
+                row.draw(p, state, l);
             }
+
             p.add_offs(0.0, ROW_HEIGHT * ROW_COMPR_FACT);
         }
 
@@ -375,7 +423,8 @@ impl Track {
                 self.interpol.to_end(l_a, &row_a, self.line_count() - 1);
             }
 
-            Some(row_a)
+            if l_a == line { Some(row_a) }
+            else { None }
         } else {
             if let Some((l_b, row_b)) = self.prev_row_with_value(line) {
                 self.interpol.to_end(l_b, &row_b, self.line_count() - 1);

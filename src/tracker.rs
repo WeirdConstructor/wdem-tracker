@@ -123,11 +123,16 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
             if display_track_count == 0 { break; }
             display_track_count -= 1;
 
+            state.track_index = i;
             state.cursor_on_track = state.cursor_track_idx == i;
             state.lpb = self.lpb;
             t.draw(p, state);
 
-            p.add_offs(TRACK_WIDTH, 0.0);
+            if i == 0 {
+                p.add_offs(FIRST_TRACK_WIDTH, 0.0);
+            } else {
+                p.add_offs(TRACK_WIDTH, 0.0);
+            }
         }
 
         p.set_offs(o);
