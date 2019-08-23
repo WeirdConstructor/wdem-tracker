@@ -47,6 +47,59 @@ impl Row {
             note: 0,
         }
     }
+
+    pub fn draw<P>(&self, p: &mut P, state: &mut GUIState) where P: GUIPainter {
+        let val_s =
+            if let Some((val, int)) = self.value {
+                format!("{:>6.2}{}",
+                    val,
+                    match int {
+                        Interpolation::Empty => "e",
+                        Interpolation::Step  => "_",
+                        Interpolation::Lerp  => "/",
+                        Interpolation::SStep => "~",
+                        Interpolation::Exp   => "^",
+                    })
+            } else {
+                String::from("------ ")
+            };
+
+        let note_s = match self.note {
+            0 => String::from("---"),
+            1 => String::from("off"),
+            n => format!("{:<4}", note2name(n)),
+        };
+
+        let s = format!("|{:<02}|{:<4}{:>7}|{:02X} {:02X}|",
+                        state.pattern_index,
+                        note_s, val_s, self.a, self.b);
+
+        let color =
+            if state.cursor_on_line && state.play_on_line {
+                [0.8, 0.8, 0.4, 1.0]
+            } else if state.play_on_line {
+                [0.8, 0.4, 0.4, 1.0]
+            } else if state.cursor_on_line {
+                [0.4, 0.8, 0.4, 1.0]
+            } else {
+                [0.0, 0.0, 0.0, 1.0]
+            };
+
+        let txt_color =
+            if state.cursor_on_line || state.play_on_line {
+                if state.on_beat { [0.0, 0.4, 0.0, 1.0] }
+                else             { [0.0, 0.0, 0.0, 1.0] }
+            } else {
+                if state.on_beat { [0.6, 1.0, 0.6, 1.0] }
+                else             { [0.8, 0.8, 0.8, 1.0] }
+            };
+
+        p.draw_rect(
+            color,
+            [0.0, 0.0],
+            [TRACK_WIDTH - 2.0, ROW_HEIGHT - 2.0], true, 0.5);
+        p.draw_text(txt_color, [0.0, 0.0], ROW_HEIGHT * 0.9, s);
+    }
 }
 
 impl InterpolationState {
@@ -99,15 +152,20 @@ fn note2name(note: u8) -> String {
 
 pub const TPOS_PAD      : f32 = 50.0;
 pub const TRACK_PAD     : f32 =  0.0;
-pub const TRACK_VAL_PAD : f32 =  4.0;
-pub const TRACK_WIDTH   : f32 = 116.0 + TRACK_VAL_PAD;
+pub const TRACK_WIDTH   : f32 = 160.0;
 pub const ROW_HEIGHT    : f32 = 15.0;
+pub const ROW_COMPR_FACT : f32 = 0.8;
 
 pub struct GUIState {
     pub cursor_track_idx:   usize,
-    pub cursor_on_track:    bool,
     pub cursor_line:        usize,
     pub play_line:          i32,
+    pub cursor_on_track:    bool,
+    pub pattern_index:      usize,
+    pub play_on_line:       bool,
+    pub on_beat:            bool,
+    pub lpb:                usize,
+    pub cursor_on_line:     bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -136,25 +194,35 @@ impl Track {
         }
     }
 
-    pub fn draw<P>(&self, p: &mut P, _state: &mut GUIState) where P: GUIPainter {
-//        let rows = (p.get_area_size().1 / ROW_HEIGHT) as usize;
+    pub fn draw<P>(&self, p: &mut P, state: &mut GUIState) where P: GUIPainter {
+        let rows = (p.get_area_size().1 / (ROW_HEIGHT * ROW_COMPR_FACT)) as usize;
 
         // rows is the nums of displayable lines
         // the window of viewed rows should be stable and only scroll if
         // the cursor is close to the edge of an window.
 
+        let o = p.get_offs();
+
         p.draw_text(
             [1.0, 1.0, 1.0, 1.0],
-            [TPOS_PAD, 0.2 * ROW_HEIGHT],
+            [0.0, 0.2 * ROW_HEIGHT],
             0.8 * ROW_HEIGHT,
             self.name.clone());
+        p.add_offs(0.0, ROW_HEIGHT);
 
-//        for l in 0..rows {
-//            let r = self.row_checked(l);
-//            if let Some(row) = r {
-//            } else {
-//            }
-//        }
+        for l in 0..rows {
+            state.play_on_line   = state.play_line == l as i32;
+            state.cursor_on_line = state.cursor_on_track && state.cursor_line == l;
+            state.on_beat        = (l % state.lpb) == 0;
+
+            if let Some((pat_idx, row)) = self.row_checked(l) {
+                state.pattern_index = pat_idx;
+                row.draw(p, state);
+            }
+            p.add_offs(0.0, ROW_HEIGHT * ROW_COMPR_FACT);
+        }
+
+        p.set_offs(o);
     }
 
     pub fn read_from_file(filename: &str) -> std::io::Result<Self> {
@@ -186,7 +254,10 @@ impl Track {
 
     pub fn set_arrangement_pattern(&mut self, line: usize, pat_idx: usize) {
         if pat_idx < self.patterns.len() {
-            self.arrangement[line / self.lpp] = pat_idx;
+            let arr_idx = line / self.lpp;
+            while arr_idx >= self.arrangement.len() {
+                self.arrangement.push(pat_idx)
+            }
         }
     }
 
@@ -202,9 +273,12 @@ impl Track {
         self.arrangement.len() * self.lpp
     }
 
-    pub fn row_checked(&mut self, line: usize) -> Option<Row> {
+    pub fn row_checked(&self, line: usize) -> Option<(usize, Row)> {
         if line >= self.line_count() { return None; }
-        Some(self.row(line).clone())
+        Some((
+            self.arrangement[line / self.lpp],
+            self.patterns[self.arrangement[line / self.lpp]][line % self.lpp].clone()
+        ))
     }
 
     pub fn row(&mut self, line: usize) -> &mut Row {
@@ -227,8 +301,9 @@ impl Track {
     pub fn next_row_with_value(&mut self, line: usize) -> Option<(usize, Row)> {
         let mut ll = line;
         let lc = self.line_count();
-        while ll <= lc {
-            let row = &self.patterns[self.arrangement[ll / self.lpp]][ll % self.lpp];
+        while ll < lc {
+            let pat_idx = self.arrangement[ll / self.lpp];
+            let row = &self.patterns[pat_idx][ll % self.lpp];
             if (*row).value.is_some() {
                 return Some((ll, row.clone()));
             }
@@ -295,7 +370,7 @@ impl Track {
     fn sync_interpol_to_play_line(&mut self, line: usize) -> Option<Row> {
         if let Some((l_a, row_a)) = self.next_row_with_value(line) {
             if let Some((l_b, row_b)) = self.prev_row_with_value(line) {
-                self.interpol.to_next(l_a, &row_a, l_b, &row_b);
+                self.interpol.to_next(l_b, &row_b, l_a, &row_a);
             } else {
                 self.interpol.to_end(l_a, &row_a, self.line_count() - 1);
             }

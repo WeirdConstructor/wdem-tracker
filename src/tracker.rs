@@ -107,7 +107,7 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
             lpb:            4, // => 4 beats are 1 `Tackt`(de)
             tpl:            10,
             tick_interval:  10,
-            lpp:          128,
+            lpp:            32,
             tracks:         Vec::new(),
             play_line:      -1,
             tick_count:     0,
@@ -124,6 +124,7 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
             display_track_count -= 1;
 
             state.cursor_on_track = state.cursor_track_idx == i;
+            state.lpb = self.lpb;
             t.draw(p, state);
 
             p.add_offs(TRACK_WIDTH, 0.0);
@@ -141,6 +142,16 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
     pub fn add_track(&mut self, t: Track) {
         self.sync.add_track(t.clone());
         self.tracks.push(t);
+    }
+
+    pub fn max_line_count(&self) -> usize {
+        let mut count = 0;
+        for t in self.tracks.iter() {
+            if t.line_count() > count {
+                count = t.line_count();
+            }
+        }
+        count
     }
 
     pub fn reset_pos(&mut self) {
@@ -181,12 +192,14 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
     pub fn handle_tick_count_change<T>(&mut self, output: &mut T)
         where T: OutputHandler {
 
+        let line_count = self.max_line_count();
+
         let mut new_play_line = self.tick_count / self.tpl;
         let fract_ticks =
             ((self.tick_count - (new_play_line * self.tpl)) as f64)
             / self.tpl as f64;
 
-        if new_play_line >= self.lpp {
+        if new_play_line >= line_count {
             new_play_line = 0;
             self.tick_count = 1;
             self.play_line = -1;

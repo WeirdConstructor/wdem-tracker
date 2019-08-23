@@ -62,7 +62,12 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
         let mut gs = GUIState {
             cursor_track_idx: self.cur_track_idx,
             cursor_on_track:  false,
+            cursor_on_line:   false,
+            play_on_line:     false,
+            pattern_index:    0,
+            on_beat:          false,
             cursor_line:      self.cur_line_idx,
+            lpb:              0,
             play_line,
         };
         self.tracker.borrow_mut().draw(p, &mut gs);
@@ -359,8 +364,9 @@ impl<SYNC> TrackerEditor<SYNC> where SYNC: TrackerSync {
             self.cur_track_idx = self.tracker.borrow().tracks.len() - 1;
         }
 
-        if self.cur_line_idx >= self.tracker.borrow().lpp {
-            self.cur_line_idx = self.tracker.borrow().lpp;
+        if self.cur_line_idx >= self.tracker.borrow().max_line_count() {
+            self.cur_line_idx = self.tracker.borrow().max_line_count();
+            if self.cur_line_idx > 0 { self.cur_line_idx -= 1; }
         }
     }
 }
