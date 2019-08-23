@@ -1,4 +1,5 @@
 use crate::track::*;
+use crate::gui_painter::GUIPainter;
 
 extern crate serde_json;
 
@@ -86,8 +87,8 @@ pub struct Tracker<SYNC> where SYNC: TrackerSync {
 pub lpb:            usize,
     /// ticks per row/line
 pub tpl:            usize,
-    /// number of lines in all tracks
-pub lines:          usize,
+    /// number of lines per pattern
+pub lpp:            usize,
     /// current play head, if -1 it will start with line 0
 pub play_line:      i32,
     /// The actual track data.
@@ -106,12 +107,29 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
             lpb:            4, // => 4 beats are 1 `Tackt`(de)
             tpl:            10,
             tick_interval:  10,
-            lines:          128,
+            lpp:          128,
             tracks:         Vec::new(),
             play_line:      -1,
             tick_count:     0,
             sync,
         }
+    }
+
+    pub fn draw<P>(&self, p: &mut P, state: &mut GUIState) where P: GUIPainter {
+        let mut display_track_count = (p.get_area_size().0 / TRACK_WIDTH) as usize;
+        let o = p.get_offs();
+
+        for (i, t) in self.tracks.iter().enumerate() {
+            if display_track_count == 0 { break; }
+            display_track_count -= 1;
+
+            state.cursor_on_track = state.cursor_track_idx == i;
+            t.draw(p, state);
+
+            p.add_offs(TRACK_WIDTH, 0.0);
+        }
+
+        p.set_offs(o);
     }
 
     pub fn tick2song_pos_in_s(&self) -> f32 {
@@ -168,7 +186,7 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
             ((self.tick_count - (new_play_line * self.tpl)) as f64)
             / self.tpl as f64;
 
-        if new_play_line >= self.lines {
+        if new_play_line >= self.lpp {
             new_play_line = 0;
             self.tick_count = 1;
             self.play_line = -1;

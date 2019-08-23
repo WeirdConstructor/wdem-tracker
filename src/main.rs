@@ -505,7 +505,7 @@ fn start_tracker_thread(
             let r = rcv.try_recv();
             match r {
                 Ok(TrackerSyncMsg::AddTrack(track)) => {
-                    t.add_track(Track::new(&track.name, track.data));
+                    t.add_track(track.clone());
                     println!("THRD: TRACK ADD TRACK");
                 },
                 Ok(TrackerSyncMsg::SetInt(track_idx, line, int)) => {
@@ -722,14 +722,9 @@ impl WDemTrackerGUI {
 
     pub fn init(&mut self) {
         for i in 0..1 {
+            let lpp = self.tracker.borrow().lpp;
             self.tracker.borrow_mut().add_track(
-                Track::new(
-                    &format!("xxx{}", i),
-                    vec![
-                        (0, 1.0, Interpolation::Step, 0xFF88, 0x00),
-                        (4, 4.0, Interpolation::Step, 0x88FF, 0x00),
-                        (5, 0.2, Interpolation::Step, 0xBEEF, 0x00),
-                    ]));
+                Track::new(&format!("xxx{}", i), lpp));
         }
     }
 
@@ -1041,7 +1036,7 @@ impl EventHandler for WDemTrackerGUI {
             use wdem_tracker::gui_painter::GUIPainter;
 
             graphics::clear(ctx, graphics::BLACK);
-            let play_pos_row = self.tracker_thread_out.lock().unwrap().pos;
+            let play_line = self.tracker_thread_out.lock().unwrap().pos;
             let val = self.tracker_thread_out.lock().unwrap().values.clone();
             self.force_redraw = false;
             let mut p : GGEZGUIPainter =
@@ -1050,7 +1045,8 @@ impl EventHandler for WDemTrackerGUI {
             p.set_offs((0.5, 0.5));
             p.draw_text([1.0, 0.0, 0.0, 1.0], [0.0, 0.0], 10.0, self.get_status_text());
             p.set_offs((0.5, 20.5));
-            self.editor.show_state(32, &mut p, play_pos_row, &val);
+            p.set_area_size((400.0, 400.0));
+            self.editor.draw(&mut p, play_line);
 
             p.set_offs((0.5, 550.5));
             self.scopes.update_from_sample_row();

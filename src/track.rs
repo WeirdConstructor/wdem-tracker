@@ -1,6 +1,7 @@
 use serde::Serialize;
 use serde::Deserialize;
 use std::io::Write;
+use crate::gui_painter::GUIPainter;
 
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Interpolation {
@@ -13,17 +14,6 @@ pub enum Interpolation {
 
 impl std::default::Default for Interpolation {
     fn default() -> Self { Interpolation::Empty }
-}
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-enum PlayPos {
-    Desync,
-    End,
-    At(usize),
-}
-
-impl std::default::Default for PlayPos {
-    fn default() -> Self { PlayPos::Desync }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -97,11 +87,32 @@ impl InterpolationState {
     }
 }
 
+const NOTE_NAMES : &'static [&str] = &["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+fn note2name(note: u8) -> String {
+    if note == 0 { return String::from(""); }
+
+    let octave   : i32   = (note / 12) as i32 - 1;
+    let name_idx : usize = (note % 12) as usize;
+    format!("{}{}", NOTE_NAMES[name_idx], octave)
+}
+
+pub const TPOS_PAD      : f32 = 50.0;
+pub const TRACK_PAD     : f32 =  0.0;
+pub const TRACK_VAL_PAD : f32 =  4.0;
+pub const TRACK_WIDTH   : f32 = 116.0 + TRACK_VAL_PAD;
+pub const ROW_HEIGHT    : f32 = 15.0;
+
+pub struct GUIState {
+    pub cursor_track_idx:   usize,
+    pub cursor_on_track:    bool,
+    pub cursor_line:        usize,
+    pub play_line:          i32,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Track {
     pub name: String,
-    #[serde(skip)]
-    play_pos: PlayPos,
     #[serde(skip)]
     interpol: InterpolationState,
     // if index is at or above desired key, interpolate
@@ -118,7 +129,6 @@ impl Track {
 
         Track {
             name:        String::from(name),
-            play_pos:    PlayPos::Desync,
             interpol:    InterpolationState::new(),
             patterns:    vec![fp],
             arrangement: vec![0],
@@ -126,11 +136,31 @@ impl Track {
         }
     }
 
+    pub fn draw<P>(&self, p: &mut P, _state: &mut GUIState) where P: GUIPainter {
+//        let rows = (p.get_area_size().1 / ROW_HEIGHT) as usize;
+
+        // rows is the nums of displayable lines
+        // the window of viewed rows should be stable and only scroll if
+        // the cursor is close to the edge of an window.
+
+        p.draw_text(
+            [1.0, 1.0, 1.0, 1.0],
+            [TPOS_PAD, 0.2 * ROW_HEIGHT],
+            0.8 * ROW_HEIGHT,
+            self.name.clone());
+
+//        for l in 0..rows {
+//            let r = self.row_checked(l);
+//            if let Some(row) = r {
+//            } else {
+//            }
+//        }
+    }
+
     pub fn read_from_file(filename: &str) -> std::io::Result<Self> {
         let s = std::fs::read_to_string(filename)?;
         Ok(serde_json::from_str(&s).unwrap_or(Track {
             name: String::from("parseerr"),
-            play_pos: PlayPos::Desync,
             interpol: InterpolationState::new(),
             patterns: vec![],
             arrangement: vec![],
@@ -172,6 +202,11 @@ impl Track {
         self.arrangement.len() * self.lpp
     }
 
+    pub fn row_checked(&mut self, line: usize) -> Option<Row> {
+        if line >= self.line_count() { return None; }
+        Some(self.row(line).clone())
+    }
+
     pub fn row(&mut self, line: usize) -> &mut Row {
         &mut self.patterns[self.arrangement[line / self.lpp]][line % self.lpp]
     }
@@ -181,7 +216,7 @@ impl Track {
         while ll > 0 {
             let row = &self.patterns[self.arrangement[(ll - 1) / self.lpp]][(ll - 1) % self.lpp];
             if (*row).value.is_some() {
-                return Some(((ll - 1), *row));
+                return Some(((ll - 1), row.clone()));
             }
             ll -= 1;
         }
@@ -195,7 +230,7 @@ impl Track {
         while ll <= lc {
             let row = &self.patterns[self.arrangement[ll / self.lpp]][ll % self.lpp];
             if (*row).value.is_some() {
-                return Some((ll, *row));
+                return Some((ll, row.clone()));
             }
             ll += 1;
         }
@@ -207,7 +242,8 @@ impl Track {
         let a = line / self.lpp;
         while a >= self.arrangement.len() {
             self.patterns.push(Vec::new());
-            self.patterns[self.patterns.len() - 1].resize(self.lpp, Row::new());
+            let last_idx = self.patterns.len() - 1;
+            self.patterns[last_idx].resize(self.lpp, Row::new());
             self.arrangement.push(self.patterns.len() - 1);
         }
 
@@ -215,7 +251,6 @@ impl Track {
     }
 
     pub fn desync(&mut self) {
-        self.play_pos = PlayPos::Desync;
         self.interpol.desync();
     }
 
