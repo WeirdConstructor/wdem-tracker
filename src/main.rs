@@ -1018,7 +1018,7 @@ impl EventHandler for WDemTrackerGUI {
             self.i = 0;
         }
 
-        let _sz = graphics::drawable_size(ctx);
+        let sz = graphics::drawable_size(ctx);
 //        let param =
 //            graphics::DrawParam::from(
 //                ([sz.0 / 2.0, sz.1 / 2.0],));
@@ -1049,15 +1049,16 @@ impl EventHandler for WDemTrackerGUI {
 
             p.set_offs((0.5, 0.5));
             p.draw_text([1.0, 0.0, 0.0, 1.0], [0.0, 0.0], 10.0, self.get_status_text());
+
             p.set_offs((0.5, 20.5));
-            p.set_area_size((400.0, 400.0));
+            p.set_area_size((sz.0, sz.1 / 2.0));
             self.editor.draw(&mut p, play_line);
 
-            p.set_offs((0.5, 550.5));
+            p.set_offs((0.5, 40.5 + sz.1 / 2.0));
             self.scopes.update_from_sample_row();
             self.scopes.draw_scopes(&mut p);
 
-            p.set_offs((300.5, 640.5));
+            p.set_offs((sz.0 / 2.0, 40.5 + sz.1 / 2.0));
             self.op_inp_set.draw(&mut p);
 
             p.show();
