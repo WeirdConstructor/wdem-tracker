@@ -506,7 +506,7 @@ fn eval_audio_script(ctxref: std::rc::Rc<std::cell::RefCell<AudioThreadWLambdaCo
         }, Some(1), Some(1));
 
     genv.borrow_mut().add_func(
-        "audio_group", |env: &mut Env, _argc: usize| {
+        "signal_group", |env: &mut Env, _argc: usize| {
             let name = env.arg(0).s_raw();
             env.with_user_do(|ctx: &mut AudioThreadWLambdaContext| {
                 Ok(VVal::Int(ctx.sim.add_group(&name) as i64))
@@ -514,23 +514,40 @@ fn eval_audio_script(ctxref: std::rc::Rc<std::cell::RefCell<AudioThreadWLambdaCo
         }, Some(1), Some(1));
 
     genv.borrow_mut().add_func(
-        "track_proxy", |env: &mut Env, _argc: usize| {
-            let op_index    = env.arg(0).i() as usize;
-            let track_count = env.arg(1).i() as usize;
+        "op", |env: &mut Env, _argc: usize| {
+            let op_type     = env.arg(0).s_raw();
+            let op_name     = env.arg(1).s_raw();
             let group_index = env.arg(2).i() as usize;
+            env.with_user_do(|ctx: &mut AudioThreadWLambdaContext| {
+                if let Some(outreg) =
+                    ctx.sim.new_op(&op_type, &op_name, group_index) {
+
+                    Ok(VVal::Int(outreg as i64))
+                } else {
+                    Ok(VVal::Nul)
+                }
+            })
+        }, Some(3), Some(3));
+
+    genv.borrow_mut().add_func(
+        "track_proxy", |env: &mut Env, _argc: usize| {
+            let track_count = env.arg(0).i() as usize;
+            let group_index = env.arg(1).i() as usize;
             env.with_user_do(|ctx: &mut AudioThreadWLambdaContext| {
                 let oprox = DoOutProxy::new(track_count);
                 ctx.track_values = oprox.values.clone();
-                ctx.sim.add_op(
-                    op_index, Box::new(oprox), String::from("T"), group_index);
+                ctx.sim.add_op(Box::new(oprox), String::from("T"), group_index);
                 Ok(VVal::Bol(true))
             })
-        }, Some(3), Some(3));
+        }, Some(2), Some(2));
 
     let mut wl_eval_ctx =
         wlambda::compiler::EvalContext::new_with_user(genv, ctxref);
 
-    wl_eval_ctx.eval_file("tracker.wl");
+    match wl_eval_ctx.eval_file("tracker.wl") {
+        Ok(_) => (),
+        Err(e) => { panic!(format!("AUDIO SCRIPT ERROR: {}", e)); }
+    }
 }
 
 fn start_tracker_thread(
@@ -681,7 +698,7 @@ fn start_tracker_thread(
             if micros_max < elap { micros_max = elap; }
 
 
-            if micros_cnt > 100 {
+            if micros_cnt > 200 {
                 o.cpu = (
                     calc_cpu_percentage(micros_sum / micros_cnt, t.tick_interval as u128),
                     calc_cpu_percentage(micros_min, t.tick_interval as u128),

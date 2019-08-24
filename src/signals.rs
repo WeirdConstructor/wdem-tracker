@@ -496,7 +496,18 @@ impl Simulator {
             .collect()
     }
 
-    pub fn add_op(&mut self, idx: usize, mut op: Box<dyn DemOp>, op_name: String, group_index: usize) -> Option<usize> {
+    pub fn get_op_index(&self, op_name: &str) -> Option<usize> {
+        let on = op_name.to_string();
+        if let Some((i, _)) =
+            self.op_infos.iter().enumerate().find(|(_i, o)| o.name == on) {
+
+            Some(i)
+        } else {
+            None
+        }
+    }
+
+    pub fn add_op(&mut self, mut op: Box<dyn DemOp>, op_name: String, group_index: usize) -> Option<usize> {
         let new_start_reg = self.regs.len();
         let new_reg_count = self.regs.len() + op.output_count();
         self.regs.resize(new_reg_count, 0.0);
@@ -507,18 +518,18 @@ impl Simulator {
             name: op_name,
             group: self.op_groups[group_index].clone()
         });
-        self.ops.insert(idx, op);
+        self.ops.push(op);
 
         out_reg
     }
 
-    pub fn new_op(&mut self, idx: usize, t: &str, name: &str, group_index: usize) -> Option<usize> {
+    pub fn new_op(&mut self, t: &str, name: &str, group_index: usize) -> Option<usize> {
         let o : Box<dyn DemOp> = match t {
             "sin" => { Box::new(DoSin::new()) },
             _     => { return None; },
         };
 
-        self.add_op(idx, o, name.to_string(), group_index)
+        self.add_op(o, name.to_string(), group_index)
     }
 
     pub fn set_reg(&mut self, idx: usize, v: f32) -> bool {
