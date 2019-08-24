@@ -1282,6 +1282,7 @@ impl EventHandler for WDemTrackerGUI {
             self.editor.draw(&mut p, play_line);
 
             p.set_offs((0.5, 40.5 + sz.1 / 2.0));
+            p.set_area_size((sz.0 / 2.0, sz.1 / 2.0));
             self.scopes.update_from_sample_row();
             self.scopes.draw_scopes(&mut p);
 

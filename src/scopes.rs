@@ -83,6 +83,12 @@ impl Scope {
             false,
             0.5);
         painter.draw_lines(
+            [0.0, 1.0, 0.0, 1.0],
+            pos,
+            &[[size[0], 0.0],[size[0], size[1]]],
+            false,
+            0.5);
+        painter.draw_lines(
             [1.0, 1.0, 1.0, 1.0],
             pos,
             &self.points,
@@ -149,17 +155,20 @@ impl Scopes {
         }
     }
 
-    pub fn draw_scopes<P>(&mut self, painter: &mut P) where P: GUIPainter {
-        let scope_width     = 128.0;
-        let scope_height    = 48.0;
-        let font_height     = SCOPE_FONT_HEIGHT;
-        let per_row : usize = 6;
+    pub fn draw_scopes<P>(&mut self, p: &mut P) where P: GUIPainter {
+        let scope_width  = 128.0;
+        let scope_height = 48.0;
+        let font_height  = SCOPE_FONT_HEIGHT;
+        let elem_height  = scope_height + SCOPE_FONT_HEIGHT;
+        let per_row      = (p.get_area_size().0 / scope_width) as usize;
+        let max_rows     = (p.get_area_size().1 / elem_height) as usize;
 
         for (i, s) in self.scopes.iter_mut().enumerate() {
             let row_idx = i % per_row;
+            if (1 + (i / per_row)) >= max_rows { break; }
             let y = (scope_height + font_height) * ((i / per_row) as f32);
             s.draw(
-                painter,
+                p,
                 i,
                 [(row_idx as f32) * scope_width, y],
                 [scope_width, scope_height]);
