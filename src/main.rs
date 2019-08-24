@@ -1,7 +1,7 @@
 extern crate serde_json;
 extern crate ggez;
 
-use wlambda::compiler::GlobalEnvRef;
+//use wlambda::compiler::GlobalEnvRef;
 
 use std::io::prelude::*;
 use wdem_tracker::track::*;
@@ -491,16 +491,65 @@ use wlambda::vval::VVal;
 use wlambda::prelude::create_wlamba_prelude;
 use wlambda::vval::{Env};
 
+struct AudioThreadWLambdaContext {
+    pub sim: Simulator,
+    pub track_values: std::rc::Rc<std::cell::RefCell<Vec<f32>>>,
+}
+
+fn eval_audio_script(ctxref: std::rc::Rc<std::cell::RefCell<AudioThreadWLambdaContext>>) {
+    let genv = create_wlamba_prelude();
+
+    genv.borrow_mut().add_func(
+        "p", |env: &mut Env, _argc: usize| {
+            println!("{}", env.arg(0).s_raw());
+            Ok(VVal::Bol(true))
+        }, Some(1), Some(1));
+
+    genv.borrow_mut().add_func(
+        "audio_group", |env: &mut Env, _argc: usize| {
+            let name = env.arg(0).s_raw();
+            env.with_user_do(|ctx: &mut AudioThreadWLambdaContext| {
+                Ok(VVal::Int(ctx.sim.add_group(&name) as i64))
+            })
+        }, Some(1), Some(1));
+
+    genv.borrow_mut().add_func(
+        "track_proxy", |env: &mut Env, _argc: usize| {
+            let op_index    = env.arg(0).i() as usize;
+            let track_count = env.arg(1).i() as usize;
+            let group_index = env.arg(2).i() as usize;
+            env.with_user_do(|ctx: &mut AudioThreadWLambdaContext| {
+                let oprox = DoOutProxy::new(track_count);
+                ctx.track_values = oprox.values.clone();
+                ctx.sim.add_op(
+                    op_index, Box::new(oprox), String::from("T"), group_index);
+                Ok(VVal::Bol(true))
+            })
+        }, Some(3), Some(3));
+
+    let mut wl_eval_ctx =
+        wlambda::compiler::EvalContext::new_with_user(genv, ctxref);
+
+    wl_eval_ctx.eval_file("tracker.wl");
+}
+
 fn start_tracker_thread(
     ext_out: std::sync::Arc<std::sync::Mutex<Output>>,
     rcv: std::sync::mpsc::Receiver<TrackerSyncMsg>,
     mut ep: SimulatorCommunicatorEndpoint) -> Scopes {
 
     let sr = Scopes::new();
-
     let rr = sr.sample_row.clone();
 
     std::thread::spawn(move || {
+        let ctxref =
+            std::rc::Rc::new(std::cell::RefCell::new(AudioThreadWLambdaContext {
+                sim:          Simulator::new(),
+                track_values: std::rc::Rc::new(std::cell::RefCell::new(vec![])),
+            }));
+
+        eval_audio_script(ctxref.clone());
+
         // wlambda API:
         // - (audio thread) setup simulator groups
         // - (audio thread) setup simulator operators and their default vals
@@ -515,15 +564,17 @@ fn start_tracker_thread(
         // - (frontend thread) frontend simulator setup (groups, operators, ...)
         //                     (insert backend values via DoOutProxy)
 
-        let mut sim = Simulator::new();
-        sim.add_group("globals");
-        let sin1_out_reg = sim.new_op(0, "sin", "Sin1", 0).unwrap();
+//        let mut sim = Simulator::new();
+//        sim.add_group("globals");
+//        let sin1_out_reg = sim.new_op(0, "sin", "Sin1", 0).unwrap();
 
-        let oprox = DoOutProxy::new(5);
-        let val_rc = oprox.values.clone();
-        sim.add_op(1, Box::new(oprox), "tracks".to_string(), 0);
+//        let oprox = DoOutProxy::new(5);
+//        let val_rc = oprox.values.clone();
+//        sim.add_op(1, Box::new(oprox), "tracks".to_string(), 0);
 
-        println!("SIN OUT REG : {}", sin1_out_reg);
+//        println!("SIN OUT REG : {}", sin1_out_reg);
+
+        let mut ctx = ctxref.borrow_mut();
 
         let mut o = Output { pos: 0, song_pos_s: 0.0, cpu: (0.0, 0.0, 0.0) };
         let mut t = Tracker::new(TrackerNopSync { });
@@ -537,7 +588,7 @@ fn start_tracker_thread(
         loop {
             let now = std::time::Instant::now();
 
-            ep.handle_ui_messages(&mut sim);
+            ep.handle_ui_messages(&mut ctx.sim);
 
             let r = rcv.try_recv();
             match r {
@@ -581,13 +632,13 @@ fn start_tracker_thread(
                         PlayHeadAction::Play     => { is_playing = true; },
                         PlayHeadAction::NextLine => {
                             println!("NEXT LINE");
-                            t.tick_to_next_line(&mut o, &val_rc);
+                            t.tick_to_next_line(&mut o, &ctx.track_values);
                             out_updated = true;
                             is_playing = false;
                         },
                         PlayHeadAction::PrevLine => {
                             println!("PREV LINE");
-                            t.tick_to_prev_line(&mut o, &val_rc);
+                            t.tick_to_prev_line(&mut o, &ctx.track_values);
                             out_updated = true;
                             is_playing = false;
                         },
@@ -603,7 +654,7 @@ fn start_tracker_thread(
             }
 
             if is_playing {
-                t.tick(&mut o, &val_rc);
+                t.tick(&mut o, &ctx.track_values);
                 out_updated = true;
                 //d// println!("THRD: TICK {}", o.pos);
             }
@@ -611,7 +662,7 @@ fn start_tracker_thread(
             if out_updated {
                 out_updated = false;
 
-                sim.exec(o.song_pos_s, rr.clone());
+                ctx.sim.exec(o.song_pos_s, rr.clone());
 
                 if let Ok(ref mut m) = ext_out.try_lock() {
                     m.pos        = o.pos;
@@ -651,8 +702,6 @@ fn start_tracker_thread(
                 micros_min = 9999999;
                 micros_max = 0;
             }
-
-            //d// println!("OUT SIN: sp[{}] {}", t.tick2song_pos_in_s(), sim.get_reg(sin1_out_reg));
 
             std::thread::sleep(
                 std::time::Duration::from_millis(

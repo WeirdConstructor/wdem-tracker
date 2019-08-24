@@ -254,6 +254,7 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
 
         let mut v = values.borrow_mut();
         for (idx, t) in self.tracks.iter_mut().enumerate() {
+            if idx >= v.len() { break; }
             v[idx] = t.get_value(new_play_line, fract_ticks);
         }
     }

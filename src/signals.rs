@@ -482,8 +482,9 @@ impl Simulator {
         valmap
     }
 
-    pub fn add_group(&mut self, name: &str) {
+    pub fn add_group(&mut self, name: &str) -> usize {
         self.op_groups.push(OpGroup { name: name.to_string(), index: self.op_groups.len() });
+        self.op_groups.len() - 1
     }
 
     pub fn get_specs(&self) -> Vec<(DemOpIOSpec, OpInfo)> {
