@@ -197,6 +197,13 @@ pub struct Track {
     pub arrangement: Vec<usize>, // arrangement of the patterns
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TrackSerialized {
+    pub name:        String,
+    pub patterns:    Vec<Vec<Row>>,
+    pub arrangement: Vec<usize>, // arrangement of the patterns
+}
+
 impl Track {
     pub fn new(name: &str, lpp: usize) -> Self {
         let mut fp = Vec::new();
@@ -272,26 +279,17 @@ impl Track {
         p.set_offs(o);
     }
 
-    pub fn deserialize_contents(&mut self, s: &str) {
-        let t = serde_json::from_str(s).unwrap_or(Track {
-            name: String::from("parseerr"),
-            interpol: InterpolationState::new(),
-            patterns: vec![],
-            arrangement: vec![],
-            lpp: 0,
-        });
-
-        self.patterns    = t.patterns;
-        self.arrangement = t.arrangement;
+    pub fn deserialize_contents(&mut self, ts: &TrackSerialized) {
+        self.patterns    = ts.patterns.clone();
+        self.arrangement = ts.arrangement.clone();
         self.desync();
     }
 
-    pub fn serialize_contents(&self) -> String {
-        match serde_json::to_string_pretty(&self) {
-            Ok(s) => s,
-            Err(e) => {
-                panic!(format!("write track to file serialize error: {}", e))
-            }
+    pub fn serialize_contents(&self) -> TrackSerialized {
+        TrackSerialized {
+            name:        self.name.clone(),
+            patterns:    self.patterns.clone(),
+            arrangement: self.arrangement.clone(),
         }
     }
 

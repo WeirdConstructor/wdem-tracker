@@ -291,12 +291,12 @@ impl OperatorInputSettings {
         }
     }
 
-    pub fn save_input_values(&mut self) -> String {
+    pub fn save_input_values(&mut self) -> Vec<(String, Vec<(String, OpIn)>)> {
         self.simcom.save_input_values()
     }
 
-    pub fn load_input_values(&mut self, s: &str) {
-        self.simcom.load_input_values(s);
+    pub fn load_input_values(&mut self, inputs: &Vec<(String, Vec<(String, OpIn)>)>) {
+        self.simcom.load_input_values(inputs);
     }
 
     pub fn hit_zone(&mut self, x: f32, y: f32) -> Option<(usize, usize)> {
@@ -1027,23 +1027,29 @@ impl EventHandler for WDemTrackerGUI {
                     'w' => {
                         let s  = self.op_inp_set.save_input_values();
                         let st = self.editor.tracker.borrow().serialize_tracks();
-                        match write_file_safely("inputs.json", &s) {
-                            Ok(()) => { },
+
+                        match serde_json::to_string_pretty(&(s, st)) {
+                            Ok(s) => {
+                                match write_file_safely("tracker.json", &s) {
+                                    Ok(()) => {
+                                        self.set_status_text(
+                                            format!("everything written ok"));
+                                    },
+                                    Err(e) => {
+                                        self.set_status_text(
+                                            format!("write error 'tracker.json': {}", e));
+                                        println!("tracker.json WRITE ERROR: {}", e);
+                                    }
+                                }
+                            },
                             Err(e) => {
-                                self.set_status_text(format!("write error 'inputs.json': {}", e));
-                                println!("inputs.json WRITE ERROR: {}", e);
+                                self.set_status_text(format!("serialize error: {}", e));
+                                println!("SERIALIZE ERROR: {}", e);
                             }
-                        }
-                        match write_file_safely("tracks.json", &st) {
-                            Ok(()) => { },
-                            Err(e) => {
-                                self.set_status_text(format!("write error 'tracks.json': {}", e));
-                                println!("tracks.json WRITE ERROR: {}", e);
-                            }
-                        }
-                        self.set_status_text(format!("everything written ok"));
+                        };
                     },
                     'r' => {
+//        valmap = serde_json::from_str(s).unwrap_or(valmap);
                     },
                     _ => (),
                 }

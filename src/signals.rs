@@ -157,24 +157,18 @@ pub trait DemOp {
     fn input_count(&self) -> usize { self.io_spec(0).inputs.len() }
     fn output_count(&self) -> usize { self.io_spec(0).outputs.len() }
 
-    fn deserialize_inputs(&mut self, s: &str) {
-        let inputs : Vec<(String, OpIn)> = serde_json::from_str(s).unwrap_or(vec![]);
+    fn deserialize_inputs(&mut self, inputs: &Vec<(String, OpIn)>) {
         for (p, v) in inputs.iter() { self.set_input(p, *v, false); }
     }
 
-    fn serialize_inputs(&self) -> String {
+    fn serialize_inputs(&self) -> Vec<(String, OpIn)> {
         let spec = self.io_spec(0);
         let vals : Vec<(String, OpIn)> =
             spec.inputs.iter()
                 .zip(spec.input_values.iter())
                 .map(|(p, v)| (p.name.clone(), *v))
                 .collect();
-        match serde_json::to_string_pretty(&vals) {
-            Ok(s) => s,
-            Err(e) => {
-                panic!(format!("serialize DemOp error: {}", e));
-            }
-        }
+        vals
     }
 }
 
@@ -337,13 +331,13 @@ pub enum SimulatorUIInput {
     Refresh,
     SetOpInput(usize, String, OpIn, bool),
     SaveInputs,
-    LoadInputs(String),
+    LoadInputs(Vec<(String, Vec<(String, OpIn)>)>),
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum SimulatorUIEvent {
     OpSpecUpdate(Vec<(DemOpIOSpec, OpInfo)>),
-    SerializedInputValues(String),
+    SerializedInputValues(Vec<(String, Vec<(String, OpIn)>)>),
 }
 
 #[derive(Debug)]
@@ -367,8 +361,8 @@ impl SimulatorCommunicatorEndpoint {
                 self.tx.send(SimulatorUIEvent::OpSpecUpdate(sim.get_specs()))
                     .expect("communication with ui thread");
             },
-            Ok(SimulatorUIInput::LoadInputs(s)) => {
-                sim.deserialize_inputs(&s);
+            Ok(SimulatorUIInput::LoadInputs(inputs)) => {
+                sim.deserialize_inputs(inputs);
             },
             Ok(SimulatorUIInput::SaveInputs) => {
                 self.tx.send(SimulatorUIEvent::SerializedInputValues(
@@ -415,19 +409,19 @@ impl SimulatorCommunicator {
             .expect("communication with backend thread");
     }
 
-    pub fn save_input_values(&mut self) -> String {
+    pub fn save_input_values(&mut self) -> Vec<(String, Vec<(String, OpIn)>)> {
         self.tx.send(SimulatorUIInput::SaveInputs)
             .expect("communication with backend thread");
         let r = self.rx.recv();
         if let Ok(SimulatorUIEvent::SerializedInputValues(v)) = r {
             v
         } else {
-            String::from("")
+            vec![]
         }
     }
 
-    pub fn load_input_values(&mut self, s: &str) {
-        self.tx.send(SimulatorUIInput::LoadInputs(s.to_string()))
+    pub fn load_input_values(&mut self, inputs: &Vec<(String, Vec<(String, OpIn)>)>) {
+        self.tx.send(SimulatorUIInput::LoadInputs(inputs.clone()))
             .expect("communication with backend thread");
     }
 
@@ -469,12 +463,8 @@ impl Simulator {
         sim
     }
 
-    pub fn deserialize_inputs(&mut self, s: &str) {
-        let mut valmap : Vec<(String, String)> = Vec::new();
-
-        valmap = serde_json::from_str(s).unwrap_or(valmap);
-
-        for (k, v) in valmap.iter() {
+    pub fn deserialize_inputs(&mut self, op_inputs: Vec<(String, Vec<(String, OpIn)>)>) {
+        for (k, v) in op_inputs.iter() {
             if let Some((idx, _)) =
                     self.op_infos.iter().enumerate()
                                  .find(|(_, i)| i.name == *k) {
@@ -484,18 +474,12 @@ impl Simulator {
         }
     }
 
-    pub fn serialize_inputs(&self) -> String {
-        let mut valmap : Vec<(String, String)> = Vec::new();
+    pub fn serialize_inputs(&self) -> Vec<(String, Vec<(String, OpIn)>)> {
+        let mut valmap : Vec<(String, Vec<(String, OpIn)>)> = Vec::new();
         for (o, info) in self.ops.iter().zip(self.op_infos.iter()) {
             valmap.push((info.name.clone(), o.serialize_inputs()));
         }
-
-        match serde_json::to_string_pretty(&valmap) {
-            Ok(s) => s,
-            Err(e) => {
-                panic!(format!("serialize simulator error: {}", e));
-            }
-        }
+        valmap
     }
 
     pub fn add_group(&mut self, name: &str) {

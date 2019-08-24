@@ -1,8 +1,6 @@
 use crate::track::*;
 use crate::gui_painter::GUIPainter;
 
-extern crate serde_json;
-
 /// This trait handles the output of a Tracker when being driven
 /// by the tick() method. It generates events for starting notes
 /// on a synthesizer and returns a vector of the interpolated values
@@ -298,25 +296,14 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
         self.tracks[track_idx].remove_value(line);
     }
 
-    pub fn serialize_tracks(&self) -> String {
-        let v : Vec<(String, String)> =
-            self.tracks.iter()
-                       .map(|t| (t.name.to_string(), t.serialize_contents()))
-                       .collect();
-
-        match serde_json::to_string_pretty(&v) {
-            Ok(s) => s,
-            Err(e) => {
-                panic!(format!("serialize track error: {}", e));
-            }
-        }
+    pub fn serialize_tracks(&self) -> Vec<TrackSerialized> {
+        self.tracks.iter().map(|t| t.serialize_contents()).collect()
     }
 
-    pub fn deserialize_tracks(&mut self, s: &str) {
-        let v : Vec<(String, String)> = serde_json::from_str(s).unwrap_or(vec![]);
-        for (name, s) in v.iter() {
-            if let Some(t) = self.tracks.iter_mut().find(|t| t.name == *name) {
-                t.deserialize_contents(s);
+    pub fn deserialize_tracks(&mut self, tracks: Vec<TrackSerialized>) {
+        for ts in tracks.iter() {
+            if let Some(t) = self.tracks.iter_mut().find(|t| t.name == ts.name) {
+                t.deserialize_contents(ts);
             }
         }
     }
