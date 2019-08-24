@@ -297,6 +297,30 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
         self.sync.remove_value(track_idx, line);
         self.tracks[track_idx].remove_value(line);
     }
+
+    pub fn serialize_tracks(&self) -> String {
+        let v : Vec<(String, String)> =
+            self.tracks.iter()
+                       .map(|t| (t.name.to_string(), t.serialize_contents()))
+                       .collect();
+
+        match serde_json::to_string_pretty(&v) {
+            Ok(s) => s,
+            Err(e) => {
+                panic!(format!("serialize track error: {}", e));
+            }
+        }
+    }
+
+    pub fn deserialize_tracks(&mut self, s: &str) {
+        let v : Vec<(String, String)> = serde_json::from_str(s).unwrap_or(vec![]);
+        for (name, s) in v.iter() {
+            if let Some(t) = self.tracks.iter_mut().find(|t| t.name == *name) {
+                t.deserialize_contents(s);
+            }
+        }
+    }
+
 }
 
 

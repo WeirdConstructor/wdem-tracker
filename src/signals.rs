@@ -1,8 +1,10 @@
 use wlambda::vval::VVal;
 use crate::scopes::SampleRow;
 use crate::scopes::SCOPE_SAMPLES;
+use serde::Serialize;
+use serde::Deserialize;
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub enum OpIn {
     Constant(f32),
     Reg(usize),
@@ -16,7 +18,7 @@ pub enum OpIn {
     RegMap(usize,f32,f32,f32,f32),
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub struct ColorIn {
     pub h:  OpIn,
     pub s:  OpIn,
@@ -120,7 +122,7 @@ impl OpIn {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct DemOpPort {
     pub min: f32,
     pub max: f32,
@@ -133,7 +135,7 @@ impl DemOpPort {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct DemOpIOSpec {
     pub index:              usize,
     pub inputs:             Vec<DemOpPort>,
@@ -154,6 +156,26 @@ pub trait DemOp {
 
     fn input_count(&self) -> usize { self.io_spec(0).inputs.len() }
     fn output_count(&self) -> usize { self.io_spec(0).outputs.len() }
+
+    fn deserialize_inputs(&mut self, s: &str) {
+        let inputs : Vec<(String, OpIn)> = serde_json::from_str(s).unwrap_or(vec![]);
+        for (p, v) in inputs.iter() { self.set_input(p, *v, false); }
+    }
+
+    fn serialize_inputs(&self) -> String {
+        let spec = self.io_spec(0);
+        let vals : Vec<(String, OpIn)> =
+            spec.inputs.iter()
+                .zip(spec.input_values.iter())
+                .map(|(p, v)| (p.name.clone(), *v))
+                .collect();
+        match serde_json::to_string_pretty(&vals) {
+            Ok(s) => s,
+            Err(e) => {
+                panic!(format!("serialize DemOp error: {}", e));
+            }
+        }
+    }
 }
 
 pub struct DoOutProxy {
@@ -314,11 +336,14 @@ pub struct OpInfo {
 pub enum SimulatorUIInput {
     Refresh,
     SetOpInput(usize, String, OpIn, bool),
+    SaveInputs,
+    LoadInputs(String),
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum SimulatorUIEvent {
     OpSpecUpdate(Vec<(DemOpIOSpec, OpInfo)>),
+    SerializedInputValues(String),
 }
 
 #[derive(Debug)]
@@ -340,6 +365,14 @@ impl SimulatorCommunicatorEndpoint {
             },
             Ok(SimulatorUIInput::Refresh) => {
                 self.tx.send(SimulatorUIEvent::OpSpecUpdate(sim.get_specs()))
+                    .expect("communication with ui thread");
+            },
+            Ok(SimulatorUIInput::LoadInputs(s)) => {
+                sim.deserialize_inputs(&s);
+            },
+            Ok(SimulatorUIInput::SaveInputs) => {
+                self.tx.send(SimulatorUIEvent::SerializedInputValues(
+                                sim.serialize_inputs()))
                     .expect("communication with ui thread");
             },
             Err(std::sync::mpsc::TryRecvError::Empty) => (),
@@ -382,6 +415,22 @@ impl SimulatorCommunicator {
             .expect("communication with backend thread");
     }
 
+    pub fn save_input_values(&mut self) -> String {
+        self.tx.send(SimulatorUIInput::SaveInputs)
+            .expect("communication with backend thread");
+        let r = self.rx.recv();
+        if let Ok(SimulatorUIEvent::SerializedInputValues(v)) = r {
+            v
+        } else {
+            String::from("")
+        }
+    }
+
+    pub fn load_input_values(&mut self, s: &str) {
+        self.tx.send(SimulatorUIInput::LoadInputs(s.to_string()))
+            .expect("communication with backend thread");
+    }
+
     pub fn update<F, T>(&mut self, mut cb: F) -> Option<T>
         where F: FnMut(SimulatorUIEvent) -> T {
 
@@ -418,6 +467,35 @@ impl Simulator {
             scope_sample_pos:   0,
         };
         sim
+    }
+
+    pub fn deserialize_inputs(&mut self, s: &str) {
+        let mut valmap : Vec<(String, String)> = Vec::new();
+
+        valmap = serde_json::from_str(s).unwrap_or(valmap);
+
+        for (k, v) in valmap.iter() {
+            if let Some((idx, _)) =
+                    self.op_infos.iter().enumerate()
+                                 .find(|(_, i)| i.name == *k) {
+
+                self.ops[idx].deserialize_inputs(v);
+            }
+        }
+    }
+
+    pub fn serialize_inputs(&self) -> String {
+        let mut valmap : Vec<(String, String)> = Vec::new();
+        for (o, info) in self.ops.iter().zip(self.op_infos.iter()) {
+            valmap.push((info.name.clone(), o.serialize_inputs()));
+        }
+
+        match serde_json::to_string_pretty(&valmap) {
+            Ok(s) => s,
+            Err(e) => {
+                panic!(format!("serialize simulator error: {}", e));
+            }
+        }
     }
 
     pub fn add_group(&mut self, name: &str) {

@@ -1,6 +1,5 @@
 use serde::Serialize;
 use serde::Deserialize;
-use std::io::Write;
 use crate::gui_painter::GUIPainter;
 
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
@@ -273,29 +272,25 @@ impl Track {
         p.set_offs(o);
     }
 
-    pub fn read_from_file(filename: &str) -> std::io::Result<Self> {
-        let s = std::fs::read_to_string(filename)?;
-        Ok(serde_json::from_str(&s).unwrap_or(Track {
+    pub fn deserialize_contents(&mut self, s: &str) {
+        let t = serde_json::from_str(s).unwrap_or(Track {
             name: String::from("parseerr"),
             interpol: InterpolationState::new(),
             patterns: vec![],
             arrangement: vec![],
             lpp: 0,
-        }))
+        });
+
+        self.patterns    = t.patterns;
+        self.arrangement = t.arrangement;
+        self.desync();
     }
 
-    pub fn write_to_file(&self, prefix: &str) -> Result<(), String> {
-        let mut f =
-            std::fs::File::create(String::from(prefix) + &self.name + "~")
-            .map_err(|e| format!("write track to file io create error: {}", e))?;
-
-        match serde_json::to_string(&self) {
-            Ok(s) => {
-                f.write_all(s.as_bytes())
-                 .map_err(|e| format!("write track to file io error: {}", e))
-            },
+    pub fn serialize_contents(&self) -> String {
+        match serde_json::to_string_pretty(&self) {
+            Ok(s) => s,
             Err(e) => {
-                Err(format!("write track to file serialize error: {}", e))
+                panic!(format!("write track to file serialize error: {}", e))
             }
         }
     }

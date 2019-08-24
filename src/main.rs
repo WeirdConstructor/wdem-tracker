@@ -1,12 +1,7 @@
 extern crate serde_json;
 extern crate ggez;
-// mod gui_painter;
-// mod track;
-// mod tracker;
-// mod tracker_editor;
-// mod scopes;
-// mod signals;
 
+use std::io::Write;
 use wdem_tracker::track::*;
 use wdem_tracker::tracker::*;
 use wdem_tracker::tracker_editor::*;
@@ -294,6 +289,14 @@ impl OperatorInputSettings {
             accu_mpos:     [0.0, 0.0],
             orig_val:      0.0,
         }
+    }
+
+    pub fn save_input_values(&mut self) -> String {
+        self.simcom.save_input_values()
+    }
+
+    pub fn load_input_values(&mut self, s: &str) {
+        self.simcom.load_input_values(s);
     }
 
     pub fn hit_zone(&mut self, x: f32, y: f32) -> Option<(usize, usize)> {
@@ -650,6 +653,7 @@ enum InputMode {
     B,
     Note,
     OpInValue(usize, usize),
+    FileActions,
 }
 
 struct WDemTrackerGUI {
@@ -737,6 +741,14 @@ impl WDemTrackerGUI {
     }
 }
 
+fn write_file_safely(filename: &str, s: &str) -> std::io::Result<()> {
+    let tmpfile = format!("{}~", filename);
+    let mut file = std::fs::File::create(tmpfile.clone())?;
+    file.write_all(s.as_bytes())?;
+    std::fs::rename(tmpfile, filename)?;
+    Ok(())
+}
+
 impl EventHandler for WDemTrackerGUI {
     fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
         Ok(())
@@ -811,6 +823,10 @@ impl EventHandler for WDemTrackerGUI {
                     },
                     'h' => {
                         self.editor.process_input(TrackerInput::TrackLeft);
+                    },
+                    'f' => {
+                        self.mode = InputMode::FileActions;
+                        self.set_status_text(format!("'w' write, 'r' read"));
                     },
                     'y' => {
                         self.op_inp_set.update();
@@ -1005,6 +1021,34 @@ impl EventHandler for WDemTrackerGUI {
 
                 self.editor.process_input(
                     TrackerInput::SetStep(self.step as usize));
+            },
+            InputMode::FileActions => {
+                match character {
+                    'w' => {
+                        let s  = self.op_inp_set.save_input_values();
+                        let st = self.editor.tracker.borrow().serialize_tracks();
+                        match write_file_safely("inputs.json", &s) {
+                            Ok(()) => { },
+                            Err(e) => {
+                                self.set_status_text(format!("write error 'inputs.json': {}", e));
+                                println!("inputs.json WRITE ERROR: {}", e);
+                            }
+                        }
+                        match write_file_safely("tracks.json", &st) {
+                            Ok(()) => { },
+                            Err(e) => {
+                                self.set_status_text(format!("write error 'tracks.json': {}", e));
+                                println!("tracks.json WRITE ERROR: {}", e);
+                            }
+                        }
+                        self.set_status_text(format!("everything written ok"));
+                    },
+                    'r' => {
+                    },
+                    _ => (),
+                }
+
+                self.mode = InputMode::Normal;
             }
         }
     }
