@@ -181,7 +181,7 @@ impl DoOutProxy {
     pub fn new(num_outputs: usize) -> Self {
         DoOutProxy {
             values: std::rc::Rc::new(std::cell::RefCell::new(vec![0.0; num_outputs])),
-            out_regs: vec![0, num_outputs],
+            out_regs: vec![0; num_outputs],
         }
     }
 }

@@ -1,7 +1,7 @@
 extern crate serde_json;
 extern crate ggez;
 
-use std::io::Write;
+use std::io::prelude::*;
 use wdem_tracker::track::*;
 use wdem_tracker::tracker::*;
 use wdem_tracker::tracker_editor::*;
@@ -478,6 +478,11 @@ impl OutputHandler for Output {
     fn song_pos(&mut self) -> &mut f32 { return &mut self.song_pos_s; }
 }
 
+fn calc_cpu_percentage(millis: u128, interval_ms: u128) -> f64 {
+     ((millis * 100000)
+      / ((interval_ms * 1000) as u128)) as f64 / 1000.0
+}
+
 fn start_tracker_thread(
     ext_out: std::sync::Arc<std::sync::Mutex<Output>>,
     rcv: std::sync::mpsc::Receiver<TrackerSyncMsg>,
@@ -503,7 +508,13 @@ fn start_tracker_thread(
 
         let mut is_playing = true;
         let mut out_updated = false;
+        let mut micros_min : u128 = 9999999;
+        let mut micros_max : u128 = 0;
+        let mut micros_sum : u128 = 0;
+        let mut micros_cnt : u128 = 0;
         loop {
+            let now = std::time::Instant::now();
+
             ep.handle_ui_messages(&mut sim);
 
             let r = rcv.try_recv();
@@ -535,6 +546,9 @@ fn start_tracker_thread(
                 Ok(TrackerSyncMsg::RemoveValue(track_idx, line)) => {
                     t.remove_value(track_idx, line);
                     println!("THRD: REMO VAL");
+                },
+                Ok(TrackerSyncMsg::DeserializeContents(track_idx, contents)) => {
+                    t.deserialize_contents(track_idx, contents);
                 },
                 Ok(TrackerSyncMsg::PlayHead(a)) => {
                     match a {
@@ -583,6 +597,30 @@ fn start_tracker_thread(
                 }
             }
 
+//            std::thread::sleep(
+//                std::time::Duration::from_millis(1));
+
+            let elap = now.elapsed().as_micros();
+            micros_sum += elap;
+            micros_cnt += 1;
+            if micros_min > elap { micros_min = elap; }
+            if micros_max < elap { micros_max = elap; }
+            if micros_cnt > 100 {
+                println!("audio thread %cpu: min={:<6}, max={:<6}, {:<6} {:<4} | {:<4} / {:6.2}/{:6.2}/{:6.2}",
+                         micros_min,
+                         micros_max,
+                         micros_sum,
+                         micros_cnt,
+                         micros_sum / micros_cnt,
+                         calc_cpu_percentage((micros_sum / micros_cnt), t.tick_interval as u128),
+                         calc_cpu_percentage(micros_min, t.tick_interval as u128),
+                         calc_cpu_percentage(micros_max, t.tick_interval as u128));
+                micros_cnt = 0;
+                micros_sum = 0;
+                micros_min = 9999999;
+                micros_max = 0;
+            }
+
             //d// println!("OUT SIN: sp[{}] {}", t.tick2song_pos_in_s(), sim.get_reg(sin1_out_reg));
 
             std::thread::sleep(
@@ -604,6 +642,7 @@ enum TrackerSyncMsg {
     SetInt(usize, usize, Interpolation),
     RemoveValue(usize, usize),
     PlayHead(PlayHeadAction),
+    DeserializeContents(usize, TrackSerialized),
 }
 
 struct ThreadTrackSync {
@@ -640,6 +679,9 @@ impl TrackerSync for ThreadTrackSync {
     }
     fn play_head(&mut self, act: PlayHeadAction) {
         self.send.send(TrackerSyncMsg::PlayHead(act));
+    }
+    fn deserialize_contents(&mut self, track_idx: usize, contents: TrackSerialized) {
+        self.send.send(TrackerSyncMsg::DeserializeContents(track_idx, contents));
     }
 }
 
@@ -1049,6 +1091,38 @@ impl EventHandler for WDemTrackerGUI {
                         };
                     },
                     'r' => {
+                        match std::fs::File::open("tracker.json") {
+                            Ok(mut file) => {
+                                let mut c = String::new();
+                                match file.read_to_string(&mut c) {
+                                    Ok(_) => {
+                                        match serde_json::from_str(&c) {
+                                            Ok(v) => {
+                                                let v : (Vec<(String, Vec<(String, OpIn)>)>, Vec<TrackSerialized>) = v;
+                                                self.op_inp_set.load_input_values(&v.0);
+                                                self.editor.tracker.borrow_mut().deserialize_tracks(v.1);
+                                                self.op_inp_set.update();
+                                            },
+                                            Err(e) => {
+                                                self.set_status_text(
+                                                    format!("deserialize error 'tracker.json': {}", e));
+                                                println!("tracker.json DESERIALIZE ERROR: {}", e);
+                                            },
+                                        }
+                                    },
+                                    Err(e) => {
+                                        self.set_status_text(
+                                            format!("read error 'tracker.json': {}", e));
+                                        println!("tracker.json READ ERROR: {}", e);
+                                    }
+                                }
+                            },
+                            Err(e) => {
+                                self.set_status_text(
+                                    format!("open error 'tracker.json': {}", e));
+                                println!("tracker.json OPEN ERROR: {}", e);
+                            }
+                        }
 //        valmap = serde_json::from_str(s).unwrap_or(valmap);
                     },
                     _ => (),

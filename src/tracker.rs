@@ -55,6 +55,8 @@ pub trait TrackerSync {
     fn remove_value(&mut self, track_idx: usize, line: usize);
     /// Called when the tracker should change the play head state:
     fn play_head(&mut self, _act: PlayHeadAction) { }
+    /// Called when track data is loaded
+    fn deserialize_contents(&mut self, track_idx: usize, contents: TrackSerialized);
 }
 
 /// This is a Tracker synchronizer that does nothing.
@@ -69,6 +71,7 @@ impl TrackerSync for TrackerNopSync {
     fn set_b(&mut self, _track_idx: usize, _line: usize, _value: u8) { }
     fn set_int(&mut self, _track_idx: usize, _line: usize, _int: Interpolation) { }
     fn remove_value(&mut self, _track_idx: usize, _line: usize) { }
+    fn deserialize_contents(&mut self, _track_idx: usize, _contents: TrackSerialized) { }
     fn play_head(&mut self, _act: PlayHeadAction) { }
 }
 
@@ -300,10 +303,17 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
         self.tracks.iter().map(|t| t.serialize_contents()).collect()
     }
 
+    pub fn deserialize_contents(&mut self, track_idx: usize, contents: TrackSerialized) {
+        self.sync.deserialize_contents(track_idx, contents.clone());
+        println!("DESER {}", track_idx);
+        self.tracks[track_idx].deserialize_contents(&contents);
+    }
+
     pub fn deserialize_tracks(&mut self, tracks: Vec<TrackSerialized>) {
         for ts in tracks.iter() {
-            if let Some(t) = self.tracks.iter_mut().find(|t| t.name == ts.name) {
-                t.deserialize_contents(ts);
+            if let Some((i, _)) =
+                self.tracks.iter_mut().enumerate().find(|(_, t)| t.name == ts.name) {
+                self.deserialize_contents(i, ts.clone());
             }
         }
     }
