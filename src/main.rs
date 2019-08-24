@@ -465,6 +465,7 @@ impl OperatorInputSettings {
 struct Output {
     pos:            i32,
     song_pos_s:     f32,
+    cpu:            (f64, f64, f64),
 }
 
 impl OutputHandler for Output {
@@ -484,6 +485,11 @@ fn calc_cpu_percentage(millis: u128, interval_ms: u128) -> f64 {
      ((millis * 100000)
       / ((interval_ms * 1000) as u128)) as f64 / 1000.0
 }
+
+use wlambda;
+use wlambda::vval::VVal;
+use wlambda::prelude::create_wlamba_prelude;
+use wlambda::vval::{Env};
 
 fn start_tracker_thread(
     ext_out: std::sync::Arc<std::sync::Mutex<Output>>,
@@ -519,7 +525,7 @@ fn start_tracker_thread(
 
         println!("SIN OUT REG : {}", sin1_out_reg);
 
-        let mut o = Output { pos: 0, song_pos_s: 0.0 };
+        let mut o = Output { pos: 0, song_pos_s: 0.0, cpu: (0.0, 0.0, 0.0) };
         let mut t = Tracker::new(TrackerNopSync { });
 
         let mut is_playing = true;
@@ -610,6 +616,7 @@ fn start_tracker_thread(
                 if let Ok(ref mut m) = ext_out.try_lock() {
                     m.pos        = o.pos;
                     m.song_pos_s = o.song_pos_s;
+                    m.cpu        = o.cpu;
                 }
             }
 
@@ -621,16 +628,24 @@ fn start_tracker_thread(
             micros_cnt += 1;
             if micros_min > elap { micros_min = elap; }
             if micros_max < elap { micros_max = elap; }
+
+
             if micros_cnt > 100 {
+                o.cpu = (
+                    calc_cpu_percentage(micros_sum / micros_cnt, t.tick_interval as u128),
+                    calc_cpu_percentage(micros_min, t.tick_interval as u128),
+                    calc_cpu_percentage(micros_max, t.tick_interval as u128));
+
                 println!("audio thread %cpu: min={:<6}, max={:<6}, {:<6} {:<4} | {:<4} / {:6.2}/{:6.2}/{:6.2}",
                          micros_min,
                          micros_max,
                          micros_sum,
                          micros_cnt,
                          micros_sum / micros_cnt,
-                         calc_cpu_percentage((micros_sum / micros_cnt), t.tick_interval as u128),
-                         calc_cpu_percentage(micros_min, t.tick_interval as u128),
-                         calc_cpu_percentage(micros_max, t.tick_interval as u128));
+                         o.cpu.0,
+                         o.cpu.1,
+                         o.cpu.2);
+
                 micros_cnt = 0;
                 micros_sum = 0;
                 micros_min = 9999999;
@@ -738,7 +753,7 @@ impl WDemTrackerGUI {
         let mut simcom = SimulatorCommunicator::new();
 
         let sync = ThreadTrackSync::new(sync_tx);
-        let out = std::sync::Arc::new(std::sync::Mutex::new(Output { pos: 0, song_pos_s: 0.0 }));
+        let out = std::sync::Arc::new(std::sync::Mutex::new(Output { pos: 0, song_pos_s: 0.0, cpu: (0.0, 0.0, 0.0) }));
 
         let scopes =
             start_tracker_thread(
@@ -1181,9 +1196,17 @@ impl EventHandler for WDemTrackerGUI {
 
             graphics::clear(ctx, graphics::BLACK);
             let play_line = self.tracker_thread_out.lock().unwrap().pos;
+            let cpu       = self.tracker_thread_out.lock().unwrap().cpu;
             self.force_redraw = false;
             let mut p : GGEZGUIPainter =
                 GGEZGUIPainter { p: self.painter.clone(), c: ctx, offs: (0.0, 0.0), area: (0.0, 0.0) };
+
+            p.set_offs(((sz.0 - 126.0) + 0.5, 0.5));
+            p.draw_text(
+                [1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0],
+                10.0,
+                format!("CPU {:6.2}/{:6.2}/{:6.2}", cpu.0, cpu.1, cpu.2));
 
             p.set_offs((0.5, 0.5));
             p.draw_text([1.0, 0.0, 0.0, 1.0], [0.0, 0.0], 10.0, self.get_status_text());
