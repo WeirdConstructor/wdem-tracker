@@ -1,6 +1,8 @@
 extern crate serde_json;
 extern crate ggez;
 
+use wlambda::compiler::GlobalEnvRef;
+
 use std::io::prelude::*;
 use wdem_tracker::track::*;
 use wdem_tracker::tracker::*;
@@ -493,6 +495,20 @@ fn start_tracker_thread(
     let rr = sr.sample_row.clone();
 
     std::thread::spawn(move || {
+        // wlambda API:
+        // - (audio thread) setup simulator groups
+        // - (audio thread) setup simulator operators and their default vals
+        // - (audio thread) setup audio buffers and routings between the audio
+        //                  devices.
+        // - (audio thread) specify which audio devices receive note events
+        //                  from the tracks.
+        // - (frontend thread) add tracks
+        // - (frontend thread) configure tracker values (needs sync!)
+        // - (frontend thread) specify project file name
+        // - (frontend thread) turtle setup
+        // - (frontend thread) frontend simulator setup (groups, operators, ...)
+        //                     (insert backend values via DoOutProxy)
+
         let mut sim = Simulator::new();
         sim.add_group("globals");
         let sin1_out_reg = sim.new_op(0, "sin", "Sin1", 0).unwrap();
