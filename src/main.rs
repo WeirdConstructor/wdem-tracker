@@ -1,8 +1,6 @@
 extern crate serde_json;
 extern crate ggez;
 
-//use wlambda::compiler::GlobalEnvRef;
-
 use std::io::prelude::*;
 use wdem_tracker::track::*;
 use wdem_tracker::tracker::*;
@@ -165,11 +163,13 @@ pub struct OperatorInputSettings {
         selection: Option<(usize, usize)>,
         accu_mpos: [f32; 2],
         orig_val:  f32,
+        scroll_offs: (usize, usize),
 }
 
 fn draw_op<P>(p: &mut P, op: &(DemOpIOSpec, OpInfo), highlight: &Option<(usize, usize)>, selection: &Option<(usize, usize)>) -> (f32, f32, Vec<([f32; 4], usize, usize)>)
         where P: wdem_tracker::gui_painter::GUIPainter {
     let inp_col_w : f32 = 102.0;
+    let inp_col_wr: f32 =  70.0;
     let padding   : f32 =   2.0;
     let text_h    : f32 =  12.0;
 
@@ -179,7 +179,7 @@ fn draw_op<P>(p: &mut P, op: &(DemOpIOSpec, OpInfo), highlight: &Option<(usize, 
     }
 
     let op_h = (1 + io_lens) as f32 * text_h + padding * 2.0;
-    let op_w = (padding + inp_col_w) * 2.0;
+    let op_w = (padding + inp_col_w + padding + inp_col_wr);
 
     p.draw_rect(
         [0.2, 0.2, 0.2, 1.0], [0.0, 0.0], [op_w, op_h], true, 0.1);
@@ -290,6 +290,7 @@ impl OperatorInputSettings {
             selection:     None,
             accu_mpos:     [0.0, 0.0],
             orig_val:      0.0,
+            scroll_offs:   (0, 0),
         }
     }
 
@@ -421,6 +422,7 @@ impl OperatorInputSettings {
             if ops.is_empty() { continue; }
 
             let group = self.specs[ops[0]].1.group.clone();
+            println!("OP: {:?} => {}", ops, group.name);
 
             self.groups[i] = (group.name.clone(), ops);
         }
@@ -432,14 +434,28 @@ impl OperatorInputSettings {
 
         self.active_zones = Vec::new();
 
-        for grp in self.groups.iter() {
-            p.draw_text([1.0, 1.0, 1.0, 1.0], [0.0, y], text_h, grp.0.clone());
-            y += text_h;
+        let oo = p.get_offs();
 
-            let oo = p.get_offs();
+        let mut skip_groups_count = self.scroll_offs.1;
+        for grp in self.groups.iter() {
+            if skip_groups_count > 0 {
+                skip_groups_count -= 1;
+                continue;
+            }
+
+            p.draw_text([1.0, 1.0, 1.0, 1.0], [0.0, 0.0], text_h, grp.0.clone());
+
+            let ooo = p.get_offs();
+
+            let mut skip_ops_count = self.scroll_offs.0;
 
             let mut max_op_h = 0.0;
             for op_i in grp.1.iter() {
+                if skip_ops_count > 0 {
+                    skip_ops_count -= 1;
+                    continue;
+                }
+
                 let op = &self.specs[*op_i];
                 let o = p.get_offs();
                 p.set_offs((o.0, o.1 + text_h));
@@ -447,18 +463,20 @@ impl OperatorInputSettings {
                 let (w, h, zones) = draw_op(p, op, &self.highlight, &self.selection);
                 self.active_zones.extend_from_slice(&zones);
                 if h > max_op_h { max_op_h = h; }
-                p.set_offs((o.0 + w, o.1));
+                p.set_offs((o.0 + w + 3.0, o.1));
+
+                if (p.get_offs().0 - oo.0) > p.get_area_size().0 {
+                    break;
+                }
+
             }
 
-            p.set_offs(oo);
+            p.set_offs(ooo);
 
-            y += max_op_h;
-//            for 
-//            p.draw_text(grp.0
+            p.add_offs(0.0, max_op_h + text_h);
         }
 
-        // draw groups as rows and names
-        // an op is a box with a title and an input col and an output col
+        p.set_offs(oo);
     }
 }
 
@@ -793,6 +811,7 @@ enum InputMode {
     Note,
     OpInValue(usize, usize),
     FileActions,
+    ScrollOps,
 }
 
 struct WDemTrackerGUI {
@@ -996,6 +1015,10 @@ impl EventHandler for WDemTrackerGUI {
                     },
                     '#' => {
                         self.mode = InputMode::Note;
+                    },
+                    'o' => {
+                        self.mode = InputMode::ScrollOps;
+
                     },
                     'n' => {
                         self.editor.process_input(
@@ -1226,7 +1249,33 @@ impl EventHandler for WDemTrackerGUI {
                 }
 
                 self.mode = InputMode::Normal;
-            }
+            },
+            InputMode::ScrollOps => {
+                match character {
+                    'h' => {
+                        if self.op_inp_set.scroll_offs.0 > 0 {
+                            self.op_inp_set.scroll_offs.0 -= 1;
+                        }
+                    },
+                    'l' => {
+                        self.op_inp_set.scroll_offs.0 += 1;
+                    },
+                    'j' => {
+                        self.op_inp_set.scroll_offs.1 += 1;
+                    },
+                    'k' => {
+                        if self.op_inp_set.scroll_offs.1 > 0 {
+                            self.op_inp_set.scroll_offs.1 -= 1;
+                        }
+                    },
+                    _ => { self.mode = InputMode::Normal; },
+                }
+
+                self.set_status_text(
+                    format!("offset[{}, {}]",
+                            self.op_inp_set.scroll_offs.0,
+                            self.op_inp_set.scroll_offs.1));
+            },
         }
     }
 
@@ -1267,7 +1316,7 @@ impl EventHandler for WDemTrackerGUI {
             let mut p : GGEZGUIPainter =
                 GGEZGUIPainter { p: self.painter.clone(), c: ctx, offs: (0.0, 0.0), area: (0.0, 0.0) };
 
-            p.set_offs(((sz.0 - 126.0) + 0.5, 0.5));
+            p.set_offs(((sz.0 - 126.0).floor() + 0.5, 0.5));
             p.draw_text(
                 [1.0, 1.0, 1.0, 1.0],
                 [0.0, 0.0],
@@ -1281,12 +1330,12 @@ impl EventHandler for WDemTrackerGUI {
             p.set_area_size((sz.0, sz.1 / 2.0));
             self.editor.draw(&mut p, play_line);
 
-            p.set_offs((0.5, 40.5 + sz.1 / 2.0));
+            p.set_offs((0.5, 40.5 + (sz.1 / 2.0).floor()));
             p.set_area_size((sz.0 / 2.0, sz.1 / 2.0));
             self.scopes.update_from_sample_row();
             self.scopes.draw_scopes(&mut p);
 
-            p.set_offs((sz.0 / 2.0, 40.5 + sz.1 / 2.0));
+            p.set_offs(((sz.0 / 2.0).floor() + 0.5, 40.5 + sz.1 / 2.0));
             self.op_inp_set.draw(&mut p);
 
             p.show();
