@@ -6,7 +6,7 @@ use wdem_tracker::track::*;
 use wdem_tracker::tracker::*;
 use wdem_tracker::tracker_editor::*;
 use wdem_tracker::scopes::Scopes;
-use wdem_tracker::signals::*;
+use wctr_signal_ops::signals::*;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -179,7 +179,7 @@ fn draw_op<P>(p: &mut P, op: &(DemOpIOSpec, OpInfo), highlight: &Option<(usize, 
     }
 
     let op_h = (1 + io_lens) as f32 * text_h + padding * 2.0;
-    let op_w = (padding + inp_col_w + padding + inp_col_wr);
+    let op_w = padding + inp_col_w + padding + inp_col_wr;
 
     p.draw_rect(
         [0.2, 0.2, 0.2, 1.0], [0.0, 0.0], [op_w, op_h], true, 0.1);
@@ -429,7 +429,6 @@ impl OperatorInputSettings {
     }
 
     pub fn draw<P>(&mut self, p: &mut P) where P: wdem_tracker::gui_painter::GUIPainter {
-        let mut y = 0.0;
         let text_h = 10.0;
 
         self.active_zones = Vec::new();

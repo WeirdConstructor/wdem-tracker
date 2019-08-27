@@ -9,6 +9,7 @@ serde              = { version = "1.0", features = [ "derive" ] }
 serde_json         = "1.0"
 ggez               = "0.5.1"
 wlambda            = { path = "../wlambda" }
+wctr-signal-ops    = { path = "../wctr-signal-ops" }
 palette            = "0.2"
 zip                = "0.5.3"
 
