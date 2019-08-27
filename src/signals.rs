@@ -1,6 +1,5 @@
+use wctr_signal_ops::sample_row::SampleRow;
 use wlambda::vval::VVal;
-use crate::scopes::SampleRow;
-use crate::scopes::SCOPE_SAMPLES;
 use serde::Serialize;
 use serde::Deserialize;
 
@@ -457,7 +456,7 @@ impl Simulator {
             op_groups:          Vec::new(),
             op_infos:           Vec::new(),
             sample_row:         SampleRow::new(),
-            scope_sample_len:   SCOPE_SAMPLES,
+            scope_sample_len:   128, // SCOPE_SAMPLES
             scope_sample_pos:   0,
         };
         sim
