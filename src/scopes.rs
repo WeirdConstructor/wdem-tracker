@@ -134,8 +134,8 @@ impl Scopes {
         let scope_height = 48.0;
         let font_height  = SCOPE_FONT_HEIGHT;
         let elem_height  = scope_height + SCOPE_FONT_HEIGHT;
-        let per_row      = (p.get_area_size().0 / scope_width) as usize;
-        let max_rows     = (p.get_area_size().1 / elem_height) as usize;
+        let per_row      = (p.get_area_size().0 / scope_width).ceil() as usize;
+        let max_rows     = (p.get_area_size().1 / elem_height).ceil() as usize;
 
         for (i, s) in self.scopes.iter_mut().enumerate() {
             let row_idx = i % per_row;

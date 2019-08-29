@@ -1329,12 +1329,15 @@ impl EventHandler for WDemTrackerGUI {
             p.set_area_size((sz.0, sz.1 / 2.0));
             self.editor.draw(&mut p, play_line);
 
-            p.set_offs((0.5, 40.5 + (sz.1 / 2.0).floor()));
-            p.set_area_size((sz.0 / 2.0, sz.1 / 2.0));
+            let y_below_tracker = 40.5 + (sz.1 / 2.0).floor();
+
+            p.set_offs((0.5, y_below_tracker));
+            p.set_area_size((sz.0, sz.1 / 4.0));
             self.scopes.update_from_sample_row();
             self.scopes.draw_scopes(&mut p);
 
-            p.set_offs(((sz.0 / 2.0).floor() + 0.5, 40.5 + sz.1 / 2.0));
+            p.set_offs((0.5, y_below_tracker + (sz.1 / 4.0).floor()));
+            p.set_area_size((sz.0, sz.1 / 4.0));
             self.op_inp_set.draw(&mut p);
 
             p.show();
