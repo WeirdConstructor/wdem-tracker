@@ -6,7 +6,8 @@ use wdem_tracker::track::*;
 use wdem_tracker::tracker::*;
 use wdem_tracker::tracker_editor::*;
 use wdem_tracker::scopes::Scopes;
-use wctr_signal_ops::signals::*;
+use wctr_signal_ops::*;
+use wave_sickle::new_slaughter;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -155,7 +156,7 @@ pub enum OperatorInputMode {
 #[derive(Debug)]
 pub struct OperatorInputSettings {
         simcom:       SimulatorCommunicator,
-    pub specs:        Vec<(DemOpIOSpec, OpInfo)>,
+    pub specs:        Vec<(OpIOSpec, OpInfo)>,
     pub groups:       Vec<(String, Vec<usize>)>,
                     //     x/y/w/h,  op_i,  in_idx
         active_zones: Vec<([f32; 4], usize, usize)>,
@@ -166,7 +167,7 @@ pub struct OperatorInputSettings {
         scroll_offs: (usize, usize),
 }
 
-fn draw_op<P>(p: &mut P, op: &(DemOpIOSpec, OpInfo), highlight: &Option<(usize, usize)>, selection: &Option<(usize, usize)>) -> (f32, f32, Vec<([f32; 4], usize, usize)>)
+fn draw_op<P>(p: &mut P, op: &(OpIOSpec, OpInfo), highlight: &Option<(usize, usize)>, selection: &Option<(usize, usize)>) -> (f32, f32, Vec<([f32; 4], usize, usize)>)
         where P: wdem_tracker::gui_painter::GUIPainter {
     let inp_col_w : f32 = 102.0;
     let inp_col_wr: f32 =  70.0;
@@ -399,7 +400,7 @@ impl OperatorInputSettings {
         }
     }
 
-    fn update_from_spec(&mut self, specs: Vec<(DemOpIOSpec, OpInfo)>) {
+    fn update_from_spec(&mut self, specs: Vec<(OpIOSpec, OpInfo)>) {
         println!("Updated: {:?}", specs);
         self.specs = specs;
         self.groups = Vec::new();
@@ -511,6 +512,7 @@ use wlambda::vval::{Env};
 struct AudioThreadWLambdaContext {
     pub sim: Simulator,
     pub track_values: std::rc::Rc<std::cell::RefCell<Vec<f32>>>,
+    pub sample_rate: usize,
 }
 
 fn eval_audio_script(ctxref: std::rc::Rc<std::cell::RefCell<AudioThreadWLambdaContext>>) {
@@ -536,12 +538,26 @@ fn eval_audio_script(ctxref: std::rc::Rc<std::cell::RefCell<AudioThreadWLambdaCo
             let op_name     = env.arg(1).s_raw();
             let group_index = env.arg(2).i() as usize;
             env.with_user_do(|ctx: &mut AudioThreadWLambdaContext| {
-                if let Some(outreg) =
-                    ctx.sim.new_op(&op_type, &op_name, group_index) {
+                let op : Box<dyn Op> =
+                    match &op_type[..] {
+                        "sin" => {
+                            let s = ops::Sin::new();
+                            Box::new(s)
+                        },
+                        "slaughter" => {
+                            let s = new_slaughter(ctx.sample_rate as f64);
+                            Box::new(s)
+                        },
+                        "audio_send" => {
+                            let s = ops::AudioSend::new();
+                            Box::new(s)
+                        },
+                        _ => { return Ok(VVal::Nul); }
+                    };
 
-                    Ok(VVal::Int(outreg as i64))
-                } else {
-                    Ok(VVal::Nul)
+                match ctx.sim.add_op(op, op_name.clone(), group_index) {
+                    Some(i) => Ok(VVal::Int(i as i64)),
+                    None    => Ok(VVal::Nul),
                 }
             })
         }, Some(3), Some(3));
@@ -551,7 +567,7 @@ fn eval_audio_script(ctxref: std::rc::Rc<std::cell::RefCell<AudioThreadWLambdaCo
             let track_count = env.arg(0).i() as usize;
             let group_index = env.arg(1).i() as usize;
             env.with_user_do(|ctx: &mut AudioThreadWLambdaContext| {
-                let oprox = DoOutProxy::new(track_count);
+                let oprox = ops::OutProxy::new(track_count);
                 ctx.track_values = oprox.values.clone();
                 ctx.sim.add_op(Box::new(oprox), String::from("T"), group_index);
                 Ok(VVal::Bol(true))
@@ -580,6 +596,7 @@ fn start_tracker_thread(
             std::rc::Rc::new(std::cell::RefCell::new(AudioThreadWLambdaContext {
                 sim:          Simulator::new(),
                 track_values: std::rc::Rc::new(std::cell::RefCell::new(vec![])),
+                sample_rate:  44100,
             }));
 
         eval_audio_script(ctxref.clone());
@@ -596,13 +613,13 @@ fn start_tracker_thread(
         // - (frontend thread) specify project file name
         // - (frontend thread) turtle setup
         // - (frontend thread) frontend simulator setup (groups, operators, ...)
-        //                     (insert backend values via DoOutProxy)
+        //                     (insert backend values via OutProxy)
 
 //        let mut sim = Simulator::new();
 //        sim.add_group("globals");
 //        let sin1_out_reg = sim.new_op(0, "sin", "Sin1", 0).unwrap();
 
-//        let oprox = DoOutProxy::new(5);
+//        let oprox = OutProxy::new(5);
 //        let val_rc = oprox.values.clone();
 //        sim.add_op(1, Box::new(oprox), "tracks".to_string(), 0);
 
@@ -771,31 +788,40 @@ impl ThreadTrackSync {
 
 impl TrackerSync for ThreadTrackSync {
     fn add_track(&mut self, t: Track) {
-        self.send.send(TrackerSyncMsg::AddTrack(t));
+        self.send.send(TrackerSyncMsg::AddTrack(t))
+            .expect("tracker thread communication");
     }
     fn set_int(&mut self, track_idx: usize, line: usize, int: Interpolation) {
-        self.send.send(TrackerSyncMsg::SetInt(track_idx, line, int));
+        self.send.send(TrackerSyncMsg::SetInt(track_idx, line, int))
+            .expect("tracker thread communication");
     }
     fn set_value(&mut self, track_idx: usize, line: usize, value: f32) {
-        self.send.send(TrackerSyncMsg::SetValue(track_idx, line, value));
+        self.send.send(TrackerSyncMsg::SetValue(track_idx, line, value))
+            .expect("tracker thread communication");
     }
     fn set_note(&mut self, track_idx: usize, line: usize, value: u8) {
-        self.send.send(TrackerSyncMsg::SetNote(track_idx, line, value));
+        self.send.send(TrackerSyncMsg::SetNote(track_idx, line, value))
+            .expect("tracker thread communication");
     }
     fn set_a(&mut self, track_idx: usize, line: usize, value: u8) {
-        self.send.send(TrackerSyncMsg::SetA(track_idx, line, value));
+        self.send.send(TrackerSyncMsg::SetA(track_idx, line, value))
+            .expect("tracker thread communication");
     }
     fn set_b(&mut self, track_idx: usize, line: usize, value: u8) {
-        self.send.send(TrackerSyncMsg::SetB(track_idx, line, value));
+        self.send.send(TrackerSyncMsg::SetB(track_idx, line, value))
+            .expect("tracker thread communication");
     }
     fn remove_value(&mut self, track_idx: usize, line: usize) {
-        self.send.send(TrackerSyncMsg::RemoveValue(track_idx, line));
+        self.send.send(TrackerSyncMsg::RemoveValue(track_idx, line))
+            .expect("tracker thread communication");
     }
     fn play_head(&mut self, act: PlayHeadAction) {
-        self.send.send(TrackerSyncMsg::PlayHead(act));
+        self.send.send(TrackerSyncMsg::PlayHead(act))
+            .expect("tracker thread communication");
     }
     fn deserialize_contents(&mut self, track_idx: usize, contents: TrackSerialized) {
-        self.send.send(TrackerSyncMsg::DeserializeContents(track_idx, contents));
+        self.send.send(TrackerSyncMsg::DeserializeContents(track_idx, contents))
+            .expect("tracker thread communication");
     }
 }
 
