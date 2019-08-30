@@ -615,17 +615,12 @@ fn start_tracker_thread(
         // - (frontend thread) frontend simulator setup (groups, operators, ...)
         //                     (insert backend values via OutProxy)
 
-//        let mut sim = Simulator::new();
-//        sim.add_group("globals");
-//        let sin1_out_reg = sim.new_op(0, "sin", "Sin1", 0).unwrap();
-
-//        let oprox = OutProxy::new(5);
-//        let val_rc = oprox.values.clone();
-//        sim.add_op(1, Box::new(oprox), "tracks".to_string(), 0);
-
-//        println!("SIN OUT REG : {}", sin1_out_reg);
-
         let mut ctx = ctxref.borrow_mut();
+
+        let device_frame_size = 128;
+
+        let mut audio_buffers =
+            ctx.sim.new_group_sample_buffers(device_frame_size * 2);
 
         let mut o = Output { pos: 0, song_pos_s: 0.0, cpu: (0.0, 0.0, 0.0) };
         let mut t = Tracker::new(TrackerNopSync { });
@@ -722,15 +717,17 @@ fn start_tracker_thread(
                 }
             }
 
-//            std::thread::sleep(
-//                std::time::Duration::from_millis(1));
+            if is_playing {
+                ctx.sim.render(device_frame_size, 0, &mut audio_buffers);
+            } else {
+                ctx.sim.render_silence(device_frame_size, 0, &mut audio_buffers);
+            }
 
             let elap = now.elapsed().as_micros();
             micros_sum += elap;
             micros_cnt += 1;
             if micros_min > elap { micros_min = elap; }
             if micros_max < elap { micros_max = elap; }
-
 
             if micros_cnt > 200 {
                 o.cpu = (
@@ -1313,22 +1310,6 @@ impl EventHandler for WDemTrackerGUI {
         }
 
         let sz = graphics::drawable_size(ctx);
-//        let param =
-//            graphics::DrawParam::from(
-//                ([sz.0 / 2.0, sz.1 / 2.0],));
-//        graphics::push_transform(ctx, Some(param.to_matrix()));
-//        graphics::apply_transformations(ctx)?;
-
-        let _now_time = ggez::timer::time_since_start(ctx).as_millis();
-
-        //d// let mut ov = OutputValues { values: Vec::new() };
-
-        //d// self.editor.tracker.borrow_mut().tick(&mut ov);
-//        if !ov.values.is_empty() {
-//            println!("OUT: {:?}", ov.values[0]);
-//        }
-
-        // println!("THREAD POS: {}", self.tracker_thread_out.lock().unwrap().pos);
 
         self.force_redraw = true;
         if self.force_redraw || self.editor.need_redraw() {
@@ -1367,12 +1348,7 @@ impl EventHandler for WDemTrackerGUI {
             self.op_inp_set.draw(&mut p);
 
             p.show();
-//            p.draw_lines([1.0, 0.0, 1.0, 1.0], [200.0, 100.0], &vec![[1.0, 10.0], [5.0, 20.0]], false, 0.5);
-//            self.painter.borrow_mut().finish_draw_text(ctx);
         }
-
-        //d// println!("O: {:?}", self.tracker_thread_out.lock().unwrap().values);
-        //d// println!("POS: {:?}", self.tracker_thread_out.lock().unwrap().pos);
 
         graphics::present(ctx)
     }
