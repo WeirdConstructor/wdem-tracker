@@ -131,7 +131,7 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
         Tracker {
             lpb:            4, // => 4 beats are 1 `Tackt`(de)
             tpl:            10,
-            tick_interval:  10,
+            tick_interval:   5,
             lpp:            32,
             tracks:         Vec::new(),
             play_line:      -1,

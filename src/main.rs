@@ -8,6 +8,7 @@ use wdem_tracker::tracker_editor::*;
 use wdem_tracker::scopes::Scopes;
 use wctr_signal_ops::*;
 use wave_sickle::new_slaughter;
+use audio::*;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -591,6 +592,8 @@ fn start_tracker_thread(
     let sr = Scopes::new();
     let rr = sr.sample_row.clone();
 
+    let audio_dev = AudioDev::new();
+
     std::thread::spawn(move || {
         let ctxref =
             std::rc::Rc::new(std::cell::RefCell::new(AudioThreadWLambdaContext {
@@ -617,13 +620,14 @@ fn start_tracker_thread(
 
         let mut ctx = ctxref.borrow_mut();
 
-        let device_frame_size = 128;
-
-        let mut audio_buffers =
-            ctx.sim.new_group_sample_buffers(device_frame_size * 2);
-
         let mut o = Output { pos: 0, song_pos_s: 0.0, cpu: (0.0, 0.0, 0.0) };
         let mut t = Tracker::new(TrackerNopSync { });
+
+        let sample_buf_len =
+            ((audio_dev.get_sample_rate() * t.tick_interval) as f64).ceil()
+            / 1000.0;
+
+        let mut audio_buffers = ctx.sim.new_group_sample_buffers(sample_buf_len);
 
         let mut is_playing = true;
         let mut out_updated = false;
