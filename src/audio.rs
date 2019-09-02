@@ -5,6 +5,8 @@ struct AudioQueue {
     backend_ready:      bool,
     sample_rate:        usize,
     samples_per_period: usize,
+                        // TODO: Instead of a vector of vectors we will just
+                        //       put in the floats directly!
     bufs:               std::collections::VecDeque<Vec<f32>>,
     empty_bufs:         Vec<Vec<f32>>,
     cur_buf:            Option<Vec<f32>>,
@@ -27,6 +29,7 @@ impl AudioDev {
                 bufs:               std::collections::VecDeque::new(),
                 empty_bufs:         Vec::new(),
                 cur_buf:            None,
+                cur_buf_idx:        0,
             }),
             cv: Condvar::new(),
             cv_put: Condvar::new(),
@@ -37,16 +40,16 @@ impl AudioDev {
         let mut aq = self.mx.lock().unwrap();
         if aq.backend_ready { return; }
 
-        aq.samples_rate       = samples_rate;
+        aq.sample_rate        = sample_rate;
         aq.samples_per_period = samples_per_period;
         aq.backend_ready      = true;
         self.cv.notify_one();
     }
 
     fn next_stereo_sample(&mut self, sidx: &mut usize, b: &mut Box<Vec<f32>>) -> (f32, f32) {
-        if b.empty() {
+        if b.is_empty() {
             let mut aq = self.mx.lock().unwrap();
-            while aq.bufs.empty() {
+            while aq.bufs.is_empty() {
                 self.cv_put.wait(aq).unwrap();
             }
 
@@ -55,7 +58,7 @@ impl AudioDev {
 
         } else if *sidx >= b.len() {
             let mut aq = self.mx.lock().unwrap();
-            while aq.bufs.empty() {
+            while aq.bufs.is_empty() {
                 self.cv_put.wait(aq).unwrap();
             }
 
@@ -69,7 +72,7 @@ impl AudioDev {
         r
     }
 
-    fn fill_backend_buffer(&mut self, buf: [
+//    fn fill_backend_buffer(&mut self, buf: [
 }
 
 struct AudioFrontend {
@@ -103,24 +106,21 @@ impl AudioFrontend {
             ((ad.sample_rate * self.put_samples_interval_ms) as f64).ceil()
             / 1000.0;
 
-        self.audio_buf_size = samples_per_interval;
+        self.audio_buf_size = samples_per_interval as usize;
 
         self.internal_buf_count =
             ((1.5 * (ad.samples_per_period as f64))
             / (self.audio_buf_size as f64)).ceil() as usize;
 
-        ad.empty_bufs.resize(
-            self.internal_buf_count,
-            [Vec::new(), Vec::new()]);
+        ad.empty_bufs.resize(self.internal_buf_count, 0.0);
         for b in ad.empty_bufs.iter_mut() {
             b[0].resize(self.audio_buf_size, 0.0);
-            b[1].resize(self.audio_buf_size, 0.0);
         }
     }
 
     fn get_sample_rate(&self) -> usize { self.sample_rate }
 
-    fn put_samples_blocking(buf: &[Vec<f32>; 2]) {
+    fn put_samples_blocking(&mut self, buf: &[Vec<f32>; 2]) {
         let mut ad = self.dev.mx.lock().unwrap();
         while !ad.empty_bufs.empty() {
             self.dev.cv.wait(ad).unwrap();

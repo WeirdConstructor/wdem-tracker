@@ -8,7 +8,7 @@ use wdem_tracker::tracker_editor::*;
 use wdem_tracker::scopes::Scopes;
 use wctr_signal_ops::*;
 use wave_sickle::new_slaughter;
-use audio::*;
+use crate::audio::*;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -516,7 +516,7 @@ struct AudioThreadWLambdaContext {
     pub sample_rate: usize,
 }
 
-fn eval_audio_script(ctxref: std::rc::Rc<std::cell::RefCell<AudioThreadWLambdaContext>>) {
+fn eval_audio_script(msgh: wlambda::threads::MsgHandle, ctxref: std::rc::Rc<std::cell::RefCell<AudioThreadWLambdaContext>>) {
     let genv = create_wlamba_prelude();
 
     genv.borrow_mut().add_func(
@@ -578,13 +578,16 @@ fn eval_audio_script(ctxref: std::rc::Rc<std::cell::RefCell<AudioThreadWLambdaCo
     let mut wl_eval_ctx =
         wlambda::compiler::EvalContext::new_with_user(genv, ctxref);
 
-    match wl_eval_ctx.eval_file("tracker.wl") {
-        Ok(_) => (),
-        Err(e) => { panic!(format!("AUDIO SCRIPT ERROR: {}", e)); }
-    }
+//    match wl_eval_ctx.eval_file("tracker.wl") {
+//        Ok(_) => (),
+//        Err(e) => { panic!(format!("AUDIO SCRIPT ERROR: {}", e)); }
+//    }
+
+    msgh.run(&mut wl_eval_ctx);
 }
 
 fn start_tracker_thread(
+    msgh: wlambda::threads::MsgHandle,
     ext_out: std::sync::Arc<std::sync::Mutex<Output>>,
     rcv: std::sync::mpsc::Receiver<TrackerSyncMsg>,
     mut ep: SimulatorCommunicatorEndpoint) -> Scopes {
@@ -602,7 +605,7 @@ fn start_tracker_thread(
                 sample_rate:  44100,
             }));
 
-        eval_audio_script(ctxref.clone());
+        eval_audio_script(msgh, ctxref.clone());
 
         // wlambda API:
         // - (audio thread) setup simulator groups
@@ -855,6 +858,7 @@ struct WDemTrackerGUI {
     status_line:        String,
     grabbed_mpos:       Option<[f32; 2]>,
     op_inp_set:         OperatorInputSettings,
+    evctx:              wlambda::compiler::EvalContext,
 }
 
 impl WDemTrackerGUI {
@@ -866,8 +870,24 @@ impl WDemTrackerGUI {
         let sync = ThreadTrackSync::new(sync_tx);
         let out = std::sync::Arc::new(std::sync::Mutex::new(Output { pos: 0, song_pos_s: 0.0, cpu: (0.0, 0.0, 0.0) }));
 
+
+        let genv = create_wlamba_prelude();
+        let mut wl_eval_ctx =
+            wlambda::compiler::EvalContext::new_with_user(genv, ctxref);
+
+        let msgh = wlambda::threads::MsgHandle::new();
+        let snd = msgh.sender();
+
+        snd.register_on_as(wl_eval_ctx, "audio");
+
+        match wl_eval_ctx.eval_file("tracker.wl") {
+            Ok(_) => (),
+            Err(e) => { panic!(format!("SCRIPT ERROR: {}", e)); }
+        }
+
         let scopes =
             start_tracker_thread(
+                msgh,
                 out.clone(),
                 sync_rx,
                 simcom.get_endpoint());
