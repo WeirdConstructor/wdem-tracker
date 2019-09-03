@@ -8,7 +8,7 @@ use wdem_tracker::tracker_editor::*;
 use wdem_tracker::scopes::Scopes;
 use wctr_signal_ops::*;
 use wave_sickle::new_slaughter;
-use crate::audio::*;
+use wdem_tracker::audio::*;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -489,7 +489,7 @@ struct Output {
 
 impl OutputHandler for Output {
     fn emit_event(&mut self, track_idx: usize, val: f32, flags: u16) {
-        println!("EMIT: {}: {}/{}", track_idx, val, flags);
+        //d// println!("EMIT: {}: {}/{}", track_idx, val, flags);
     }
 
     fn emit_play_line(&mut self, play_line: i32) {
@@ -516,7 +516,7 @@ struct AudioThreadWLambdaContext {
     pub sample_rate: usize,
 }
 
-fn eval_audio_script(msgh: wlambda::threads::MsgHandle, ctxref: std::rc::Rc<std::cell::RefCell<AudioThreadWLambdaContext>>) {
+fn eval_audio_script(mut msgh: wlambda::threads::MsgHandle, ctxref: std::rc::Rc<std::cell::RefCell<AudioThreadWLambdaContext>>) {
     let genv = create_wlamba_prelude();
 
     genv.borrow_mut().add_func(
@@ -567,6 +567,7 @@ fn eval_audio_script(msgh: wlambda::threads::MsgHandle, ctxref: std::rc::Rc<std:
         "track_proxy", |env: &mut Env, _argc: usize| {
             let track_count = env.arg(0).i() as usize;
             let group_index = env.arg(1).i() as usize;
+            println!("TR {} , {}", track_count, group_index);
             env.with_user_do(|ctx: &mut AudioThreadWLambdaContext| {
                 let oprox = ops::OutProxy::new(track_count);
                 ctx.track_values = oprox.values.clone();
@@ -583,7 +584,9 @@ fn eval_audio_script(msgh: wlambda::threads::MsgHandle, ctxref: std::rc::Rc<std:
 //        Err(e) => { panic!(format!("AUDIO SCRIPT ERROR: {}", e)); }
 //    }
 
+    println!("RUN");
     msgh.run(&mut wl_eval_ctx);
+    println!("RUN DONE");
 }
 
 fn start_tracker_thread(
@@ -595,7 +598,7 @@ fn start_tracker_thread(
     let sr = Scopes::new();
     let rr = sr.sample_row.clone();
 
-    let audio_dev = AudioDev::new();
+    let mut audio_f = AudioFrontend::new();
 
     std::thread::spawn(move || {
         let ctxref =
@@ -627,13 +630,14 @@ fn start_tracker_thread(
         let mut t = Tracker::new(TrackerNopSync { });
 
         let sample_buf_len =
-            ((audio_dev.get_sample_rate() * t.tick_interval) as f64).ceil()
-            / 1000.0;
+            (((audio_f.get_sample_rate() * t.tick_interval) as f64).ceil()
+             / 1000.0)
+            as usize;
 
         let mut audio_buffers = ctx.sim.new_group_sample_buffers(sample_buf_len);
 
-        let mut is_playing = true;
-        let mut out_updated = false;
+        let mut is_playing        = true;
+        let mut out_updated       = false;
         let mut micros_min : u128 = 9999999;
         let mut micros_max : u128 = 0;
         let mut micros_sum : u128 = 0;
@@ -725,10 +729,12 @@ fn start_tracker_thread(
             }
 
             if is_playing {
-                ctx.sim.render(device_frame_size, 0, &mut audio_buffers);
+                ctx.sim.render(sample_buf_len, 0, &mut audio_buffers);
             } else {
-                ctx.sim.render_silence(device_frame_size, 0, &mut audio_buffers);
+                ctx.sim.render_silence(sample_buf_len, 0, &mut audio_buffers);
             }
+
+            // audio_f.put_samples_blocking(&audio_buffers[0][..]);
 
             let elap = now.elapsed().as_micros();
             micros_sum += elap;
@@ -742,15 +748,15 @@ fn start_tracker_thread(
                     calc_cpu_percentage(micros_min, t.tick_interval as u128),
                     calc_cpu_percentage(micros_max, t.tick_interval as u128));
 
-                println!("audio thread %cpu: min={:<6}, max={:<6}, {:<6} {:<4} | {:<4} / {:6.2}/{:6.2}/{:6.2}",
-                         micros_min,
-                         micros_max,
-                         micros_sum,
-                         micros_cnt,
-                         micros_sum / micros_cnt,
-                         o.cpu.0,
-                         o.cpu.1,
-                         o.cpu.2);
+//                println!("audio thread %cpu: min={:<6}, max={:<6}, {:<6} {:<4} | {:<4} / {:6.2}/{:6.2}/{:6.2}",
+//                         micros_min,
+//                         micros_max,
+//                         micros_sum,
+//                         micros_cnt,
+//                         micros_sum / micros_cnt,
+//                         o.cpu.0,
+//                         o.cpu.1,
+//                         o.cpu.2);
 
                 micros_cnt = 0;
                 micros_sum = 0;
@@ -873,17 +879,10 @@ impl WDemTrackerGUI {
 
         let genv = create_wlamba_prelude();
         let mut wl_eval_ctx =
-            wlambda::compiler::EvalContext::new_with_user(genv, ctxref);
+            wlambda::compiler::EvalContext::new(genv);
 
         let msgh = wlambda::threads::MsgHandle::new();
         let snd = msgh.sender();
-
-        snd.register_on_as(wl_eval_ctx, "audio");
-
-        match wl_eval_ctx.eval_file("tracker.wl") {
-            Ok(_) => (),
-            Err(e) => { panic!(format!("SCRIPT ERROR: {}", e)); }
-        }
 
         let scopes =
             start_tracker_thread(
@@ -891,6 +890,13 @@ impl WDemTrackerGUI {
                 out.clone(),
                 sync_rx,
                 simcom.get_endpoint());
+
+        snd.register_on_as(&mut wl_eval_ctx, "audio");
+
+        match wl_eval_ctx.eval_file("tracker.wl") {
+            Ok(_) => (),
+            Err(e) => { panic!(format!("SCRIPT ERROR: {}", e)); }
+        }
 
         let font = graphics::Font::new(ctx, "/DejaVuSansMono.ttf").unwrap();
         let trk = Rc::new(RefCell::new(Tracker::new(sync)));
@@ -907,6 +913,7 @@ impl WDemTrackerGUI {
             grabbed_mpos:       None,
             status_line:        String::from(""),
             op_inp_set:         OperatorInputSettings::new(simcom),
+            evctx:              wl_eval_ctx,
             scopes,
             painter: Rc::new(RefCell::new(GGEZPainter {
                 text_cache: std::collections::HashMap::new(),
