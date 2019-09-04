@@ -27,7 +27,7 @@ impl AudioDev {
         }
     }
 
-    pub fn backend_ready(&mut self, sample_rate: usize, samples_per_period: usize) {
+    pub fn backend_ready(&self, sample_rate: usize, samples_per_period: usize) {
         let mut aq = self.mx.lock().unwrap();
         if aq.backend_ready { return; }
 
@@ -37,16 +37,18 @@ impl AudioDev {
         self.cv.notify_one();
     }
 
-    pub fn get_stereo_samples(&mut self, stereo_out: &mut [f32]) {
+    pub fn get_stereo_samples(&self, stereo_out: &mut [f32]) {
         let mut aq = self.mx.lock().unwrap();
         while aq.samples.len() < stereo_out.len() {
             aq = self.cv_put.wait(aq).unwrap();
+            println!("MISSED SAMPLES!");
         }
 
         let len = stereo_out.len();
         for (i, s) in aq.samples.drain(0..len).enumerate() {
             stereo_out[i] = s;
         }
+        self.cv_put.notify_one();
     }
 }
 
@@ -66,6 +68,8 @@ impl AudioFrontend {
             max_buffer_fill:    0,
         }
     }
+
+    pub fn get_dev(&self) -> Arc<AudioDev> { self.dev.clone() }
 
     pub fn wait_backend_ready(&mut self) {
         let mut ad = self.dev.mx.lock().unwrap();
@@ -90,9 +94,10 @@ impl AudioFrontend {
     pub fn put_samples_blocking(&mut self, buf: &[f32]) {
         let mut ad = self.dev.mx.lock().unwrap();
         while ad.samples.len() >= self.max_buffer_fill {
-            ad = self.dev.cv.wait(ad).unwrap();
+            ad = self.dev.cv_put.wait(ad).unwrap();
         }
 
         for s in buf.iter() { ad.samples.push_back(*s); }
+        self.dev.cv_put.notify_one();
     }
 }

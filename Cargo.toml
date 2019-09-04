@@ -13,6 +13,7 @@ wctr_signal_ops    = { path = "../wctr-signal-ops" }
 wave_sickle        = { path = "../wave-sickle" }
 palette            = "0.2"
 zip                = "0.5.3"
+cpal               = "0.10.0"
 
 [dev-dependencies]
 ggez               = "0.5.1"

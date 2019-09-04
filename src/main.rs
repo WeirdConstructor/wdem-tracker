@@ -11,6 +11,8 @@ use wave_sickle::new_slaughter;
 use wdem_tracker::audio::*;
 
 use std::rc::Rc;
+use std::sync::Arc;
+use std::sync::Mutex;
 use std::cell::RefCell;
 
 use ggez::{Context, ContextBuilder, GameResult};
@@ -402,7 +404,7 @@ impl OperatorInputSettings {
     }
 
     fn update_from_spec(&mut self, specs: Vec<(OpIOSpec, OpInfo)>) {
-        println!("Updated: {:?}", specs);
+        //d// println!("Updated: {:?}", specs);
         self.specs = specs;
         self.groups = Vec::new();
 
@@ -589,6 +591,92 @@ fn eval_audio_script(mut msgh: wlambda::threads::MsgHandle, ctxref: std::rc::Rc<
     println!("RUN DONE");
 }
 
+fn start_audio_thread(audio_dev: Arc<AudioDev>) {
+
+    let ad = audio_dev.clone();
+    std::thread::spawn(move || {
+        use cpal::traits::{DeviceTrait, EventLoopTrait, HostTrait};
+        let host = cpal::default_host();
+        let event_loop = host.event_loop();
+        let device = host.default_output_device().expect("no output device available");
+        let format = device.default_output_format().expect("proper default format");
+        println!("FORMAT: {:?}", format);
+        let stream_id = event_loop.build_output_stream(&device, &format).unwrap();
+        event_loop.play_stream(stream_id).expect("failed to play_stream");
+
+        let sample_rate = if let cpal::SampleRate(r) = format.sample_rate {
+            r
+        } else {
+            44100
+        };
+
+        let channels = format.channels as usize;
+
+        let mut avg_buf_len = 0;
+        let mut avg_buf_cnt = 0;
+        let avg_buf_len_samples = 10;
+        let mut startup = true;
+
+        let mut last_call_instant = std::time::Instant::now();
+
+        use cpal::{StreamData, UnknownTypeOutputBuffer};
+        event_loop.run(move |stream_id, stream_result| {
+            let stream_data = match stream_result {
+                Ok(data) => data,
+                Err(err) => {
+                    eprintln!("an error occurred on stream {:?}: {}", stream_id, err);
+                    return;
+                }
+            };
+
+            match stream_data {
+                StreamData::Output { buffer: UnknownTypeOutputBuffer::U16(mut buffer) } => {
+                    println!("FOFOE3");
+                    for elem in buffer.iter_mut() {
+                        *elem = u16::max_value() / 2;
+                    }
+                },
+                StreamData::Output { buffer: UnknownTypeOutputBuffer::I16(mut buffer) } => {
+                    println!("FOFOE2");
+                    for elem in buffer.iter_mut() {
+                        *elem = 0;
+                    }
+                },
+                StreamData::Output { buffer: UnknownTypeOutputBuffer::F32(mut buffer) } => {
+                    if startup {
+                        if avg_buf_cnt < avg_buf_len_samples {
+                            avg_buf_len += buffer.len();
+                            avg_buf_cnt += 1;
+
+                            for elem in buffer.iter_mut() {
+                                *elem = 0.0;
+                            }
+
+                            return;
+                        } else {
+                            audio_dev.backend_ready(
+                                sample_rate as usize,
+                                avg_buf_len / avg_buf_cnt);
+                            println!("AVG BUF SIZE: {}", avg_buf_len / avg_buf_cnt);
+                            startup = false;
+                        }
+                    }
+
+                    audio_dev.get_stereo_samples(&mut buffer);
+
+                    println!("Audio time ms: {}", last_call_instant.elapsed().as_millis());
+                    last_call_instant = std::time::Instant::now();
+
+//                    for elem in buffer.iter_mut() {
+//                        *elem = 0.0;
+//                    }
+                },
+                _ => (),
+            }
+        });
+    });
+}
+
 fn start_tracker_thread(
     msgh: wlambda::threads::MsgHandle,
     ext_out: std::sync::Arc<std::sync::Mutex<Output>>,
@@ -599,8 +687,13 @@ fn start_tracker_thread(
     let rr = sr.sample_row.clone();
 
     let mut audio_f = AudioFrontend::new();
+    let audio_dev = audio_f.get_dev();
+    start_audio_thread(audio_dev);
 
     std::thread::spawn(move || {
+        audio_f.wait_backend_ready();
+
+
         let ctxref =
             std::rc::Rc::new(std::cell::RefCell::new(AudioThreadWLambdaContext {
                 sim:          Simulator::new(),
@@ -734,7 +827,7 @@ fn start_tracker_thread(
                 ctx.sim.render_silence(sample_buf_len, 0, &mut audio_buffers);
             }
 
-            // audio_f.put_samples_blocking(&audio_buffers[0][..]);
+            audio_f.put_samples_blocking(&audio_buffers[0][..]);
 
             let elap = now.elapsed().as_micros();
             micros_sum += elap;
@@ -764,9 +857,9 @@ fn start_tracker_thread(
                 micros_max = 0;
             }
 
-            std::thread::sleep(
-                std::time::Duration::from_millis(
-                    t.tick_interval as u64));
+//            std::thread::sleep(
+//                std::time::Duration::from_millis(
+//                    t.tick_interval as u64));
         }
     });
 
