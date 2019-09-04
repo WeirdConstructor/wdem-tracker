@@ -618,6 +618,7 @@ fn start_audio_thread(audio_dev: Arc<AudioDev>) {
         let mut startup = true;
 
         let mut last_call_instant = std::time::Instant::now();
+        let mut cnt = 0;
 
         use cpal::{StreamData, UnknownTypeOutputBuffer};
         event_loop.run(move |stream_id, stream_result| {
@@ -656,7 +657,7 @@ fn start_audio_thread(audio_dev: Arc<AudioDev>) {
                         } else {
                             audio_dev.backend_ready(
                                 sample_rate as usize,
-                                avg_buf_len / avg_buf_cnt);
+                                ((avg_buf_len / avg_buf_cnt) as f64 * 1.5).ceil() as usize);
                             println!("AVG BUF SIZE: {}", avg_buf_len / avg_buf_cnt);
                             startup = false;
                         }
@@ -665,7 +666,12 @@ fn start_audio_thread(audio_dev: Arc<AudioDev>) {
 
                     audio_dev.get_stereo_samples(&mut buffer);
 
-//                    println!("Audio time ms: {} / {}", last_call_instant.elapsed().as_millis(), m.elapsed().as_micros());
+                    cnt += 1;
+                    if cnt % 200 == 0 {
+                        println!("Audio time ms: cycle={}us, wait={}us ",
+                                last_call_instant.elapsed().as_micros(),
+                                m.elapsed().as_micros());
+                    }
                     last_call_instant = std::time::Instant::now();
 
 //                    for elem in buffer.iter_mut() {
@@ -690,6 +696,8 @@ fn start_tracker_thread(
     let mut audio_f = AudioFrontend::new();
     let audio_dev = audio_f.get_dev();
     start_audio_thread(audio_dev);
+
+    let mut last_iter = std::time::Instant::now();
 
     std::thread::spawn(move || {
         audio_f.wait_backend_ready();
@@ -828,15 +836,26 @@ fn start_tracker_thread(
                 ctx.sim.render_silence(sample_buf_len, 0, &mut audio_buffers);
             }
 
-            audio_f.put_samples_blocking(&audio_buffers[0][..]);
+            std::thread::sleep(
+                std::time::Duration::from_micros(
+                    (((t.tick_interval * 1000) as f64) * 0.1) as u64));
 
             let elap = now.elapsed().as_micros();
+
+            let wait = std::time::Instant::now();
+            audio_f.put_samples_blocking(&audio_buffers[0][..]);
+
+            let whole = last_iter.elapsed().as_micros();
+            last_iter = std::time::Instant::now();
+
+
             micros_sum += elap;
             micros_cnt += 1;
             if micros_min > elap { micros_min = elap; }
             if micros_max < elap { micros_max = elap; }
 
             if micros_cnt > 200 {
+                println!("i elap={}, min={}, max={}, whole={}, wait={}", elap, micros_min, micros_max, whole, wait.elapsed().as_micros());
                 o.cpu = (
                     calc_cpu_percentage(micros_sum / micros_cnt, t.tick_interval as u128),
                     calc_cpu_percentage(micros_min, t.tick_interval as u128),
