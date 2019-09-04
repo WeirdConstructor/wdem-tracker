@@ -9,6 +9,7 @@ use wdem_tracker::scopes::Scopes;
 use wctr_signal_ops::*;
 use wave_sickle::new_slaughter;
 use wdem_tracker::audio::*;
+use wdem_tracker::vval_opin::*;
 
 use std::rc::Rc;
 use std::sync::Arc;
@@ -534,6 +535,27 @@ fn eval_audio_script(mut msgh: wlambda::threads::MsgHandle, ctxref: std::rc::Rc<
                 Ok(VVal::Int(ctx.sim.add_group(&name) as i64))
             })
         }, Some(1), Some(1));
+
+    genv.borrow_mut().add_func(
+        "input", |env: &mut Env, _argc: usize| {
+            let op_name = env.arg(0).s_raw();
+            let in_name = env.arg(1).s_raw();
+            let op_in   = vv2opin(env.arg(2).clone());
+            if op_in.is_none() {
+                return Ok(VVal::err_msg(
+                    &format!("bad op description: {}", env.arg(2).s())));
+            }
+            env.with_user_do(|ctx: &mut AudioThreadWLambdaContext| {
+                let op_idx = ctx.sim.get_op_index(&op_name);
+                if op_idx.is_none() {
+                    return Ok(VVal::err_msg(
+                        &format!("bad op name: {}", op_name)));
+                }
+                ctx.sim.set_op_input(op_idx.unwrap(), &in_name, op_in.unwrap().clone(), true);
+                ctx.sim.set_op_input(op_idx.unwrap(), &in_name, op_in.unwrap().clone(), false);
+                Ok(VVal::Bol(true))
+            })
+        }, Some(3), Some(3));
 
     genv.borrow_mut().add_func(
         "op", |env: &mut Env, _argc: usize| {
