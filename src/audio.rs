@@ -41,7 +41,6 @@ impl AudioDev {
         let mut aq = self.mx.lock().unwrap();
         while aq.samples.len() < stereo_out.len() {
             aq = self.cv_put.wait(aq).unwrap();
-            println!("MISSED SAMPLES!");
         }
 
         let len = stereo_out.len();

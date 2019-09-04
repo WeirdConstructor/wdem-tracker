@@ -661,10 +661,11 @@ fn start_audio_thread(audio_dev: Arc<AudioDev>) {
                             startup = false;
                         }
                     }
+                    let m = std::time::Instant::now();
 
                     audio_dev.get_stereo_samples(&mut buffer);
 
-                    println!("Audio time ms: {}", last_call_instant.elapsed().as_millis());
+//                    println!("Audio time ms: {} / {}", last_call_instant.elapsed().as_millis(), m.elapsed().as_micros());
                     last_call_instant = std::time::Instant::now();
 
 //                    for elem in buffer.iter_mut() {
