@@ -172,7 +172,7 @@ pub struct OperatorInputSettings {
 
 fn draw_op<P>(p: &mut P, op: &(OpIOSpec, OpInfo), highlight: &Option<(usize, usize)>, selection: &Option<(usize, usize)>) -> (f32, f32, Vec<([f32; 4], usize, usize)>)
         where P: wdem_tracker::gui_painter::GUIPainter {
-    let inp_col_w : f32 = 102.0;
+    let inp_col_w : f32 = 142.0;
     let inp_col_wr: f32 =  70.0;
     let padding   : f32 =   2.0;
     let text_h    : f32 =  12.0;
@@ -1120,6 +1120,7 @@ impl EventHandler for WDemTrackerGUI {
     fn mouse_motion_event(&mut self, ctx: &mut Context, x: f32, y: f32,
                           mut xr: f32, mut yr: f32) {
 
+        let sz = graphics::drawable_size(ctx);
         // XXX: Workaround for bug in winit, where on windows WM_MOUSEMOTION
         //      is kept being sent to the application. And ggez does
         xr = x - self.ref_mpos[0];
@@ -1132,19 +1133,11 @@ impl EventHandler for WDemTrackerGUI {
         if mouse_is_grabbed {
             if self.grabbed_mpos.is_none() {
                 self.grabbed_mpos = Some([x, y]);
-                let sz = graphics::drawable_size(ctx);
                 set_position(ctx, [sz.0 / 2.0, sz.1 / 2.0]);
                 self.ref_mpos = [sz.0 / 2.0, sz.1 / 2.0];
             }
 
-            //set_cursor_grabbed(ctx, true).expect("mouse ok");
-            //set_cursor_hidden(ctx, true);
-            //set_position(ctx, self.grabbed_mpos.unwrap()).expect("mouse ok");
-
         } else {
-            //set_cursor_grabbed(ctx, false).expect("mouse ok");
-            //set_cursor_hidden(ctx, false);
-
             if self.grabbed_mpos.is_some() {
                 set_position(ctx, self.grabbed_mpos.unwrap());
             }
