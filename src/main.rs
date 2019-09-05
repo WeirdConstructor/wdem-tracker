@@ -166,7 +166,6 @@ pub struct OperatorInputSettings {
         active_zones: Vec<([f32; 4], usize, usize)>,
         highlight: Option<(usize, usize)>,
         selection: Option<(usize, usize)>,
-        accu_mpos: [f32; 2],
         orig_val:  f32,
         scroll_offs: (usize, usize),
 }
@@ -293,7 +292,6 @@ impl OperatorInputSettings {
             active_zones:  Vec::new(),
             highlight:     None,
             selection:     None,
-            accu_mpos:     [0.0, 0.0],
             orig_val:      0.0,
             scroll_offs:   (0, 0),
         }
@@ -340,7 +338,6 @@ impl OperatorInputSettings {
                    && self.selection.is_none()
                    && old_highlight == self.highlight {
 
-                    self.accu_mpos = [0.0, 0.0];
                     self.selection = self.highlight;
                     self.orig_val  = self.get_selection_val();
                     return true;
@@ -350,10 +347,7 @@ impl OperatorInputSettings {
         }
 
         if self.selection.is_some() && button_is_down {
-            self.accu_mpos[0] += xr;
-            self.accu_mpos[1] += yr;
-
-            let ampli = -(self.accu_mpos[1] as f32 / 100.0);
+            let ampli = -(yr as f32 / 100.0);
             let s = self.selection.unwrap();
             self.set_input_val(s.0, s.1, self.orig_val + ampli);
             return true;
@@ -998,6 +992,7 @@ struct WDemTrackerGUI {
     octave:             u8,
     status_line:        String,
     grabbed_mpos:       Option<[f32; 2]>,
+    ref_mpos:           [f32; 2],
     op_inp_set:         OperatorInputSettings,
     evctx:              wlambda::compiler::EvalContext,
 }
@@ -1043,6 +1038,7 @@ impl WDemTrackerGUI {
             mode:               InputMode::Normal,
             step:               0,
             i:                  0,
+            ref_mpos:           [0.0, 0.0],
             num_txt:            String::from(""),
             octave:             4,
             grabbed_mpos:       None,
@@ -1122,7 +1118,12 @@ impl EventHandler for WDemTrackerGUI {
     }
 
     fn mouse_motion_event(&mut self, ctx: &mut Context, x: f32, y: f32,
-                          xr: f32, yr: f32) {
+                          mut xr: f32, mut yr: f32) {
+
+        // XXX: Workaround for bug in winit, where on windows WM_MOUSEMOTION
+        //      is kept being sent to the application. And ggez does
+        xr = x - self.ref_mpos[0];
+        yr = y - self.ref_mpos[1];
 
         let mouse_is_grabbed =
             self.op_inp_set.handle_mouse_move(
@@ -1131,15 +1132,22 @@ impl EventHandler for WDemTrackerGUI {
         if mouse_is_grabbed {
             if self.grabbed_mpos.is_none() {
                 self.grabbed_mpos = Some([x, y]);
+                let sz = graphics::drawable_size(ctx);
+                set_position(ctx, [sz.0 / 2.0, sz.1 / 2.0]);
+                self.ref_mpos = [sz.0 / 2.0, sz.1 / 2.0];
             }
 
-            set_cursor_grabbed(ctx, true).expect("mouse ok");
-            set_cursor_hidden(ctx, true);
-            set_position(ctx, self.grabbed_mpos.unwrap()).expect("mouse ok");
+            //set_cursor_grabbed(ctx, true).expect("mouse ok");
+            //set_cursor_hidden(ctx, true);
+            //set_position(ctx, self.grabbed_mpos.unwrap()).expect("mouse ok");
 
         } else {
-            set_cursor_grabbed(ctx, false).expect("mouse ok");
-            set_cursor_hidden(ctx, false);
+            //set_cursor_grabbed(ctx, false).expect("mouse ok");
+            //set_cursor_hidden(ctx, false);
+
+            if self.grabbed_mpos.is_some() {
+                set_position(ctx, self.grabbed_mpos.unwrap());
+            }
             self.grabbed_mpos = None;
         }
     }
