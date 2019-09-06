@@ -1,5 +1,5 @@
-WDemTracker - A music tracker which uses wave-sickle as audio backend
-=====================================================================
+WDemTracker - A music tracker which uses wave-sickle for sound generation
+=========================================================================
 
 This is a crate that provides an editor and tracker backend for use in other
 applications. The editor currently uses ggez for graphics and input handling,
