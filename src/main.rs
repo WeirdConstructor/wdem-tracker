@@ -852,9 +852,9 @@ fn start_tracker_thread(
                 ctx.sim.render_silence(sample_buf_len, 0, &mut audio_buffers);
             }
 
-            std::thread::sleep(
-                std::time::Duration::from_micros(
-                    (((t.tick_interval * 1000) as f64) * 0.1) as u64));
+//            std::thread::sleep(
+//                std::time::Duration::from_micros(
+//                    (((t.tick_interval * 1000) as f64) * 0.1) as u64));
 
             let elap = now.elapsed().as_micros();
 
@@ -1121,12 +1121,6 @@ impl EventHandler for WDemTrackerGUI {
                         }
                     },
                     _ => (),
-//                    KeyCode::Backspace => {
-//                        if p > 0 {
-//                            let p = p - 1;
-//                            self.mode = InputMode::HelpScreen(p);
-//                        }
-//                    }
                 }
             },
             _ => (),
