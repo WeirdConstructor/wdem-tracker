@@ -6,13 +6,34 @@ WDemTracker - A music tracker which uses wave-sickle for sound generation
 </a>
 
 This is a crate that provides an editor and tracker backend for use in other
-applications. The editor currently uses ggez for graphics and input handling,
-but could be rather easily ported to SDL or other graphics libraries.
+Rust applications. The editor currently uses ggez for graphics and input
+handling, but could be rather easily ported to SDL or other graphics libraries.
+
+The Rust port of @logicomacorp Logicoma's WaveSabre synthesizer for 64k demos
+which I called [wave-sickle](https://github.com/WeirdConstructor/wave-sickle)
+is responsible for sound synthesis and sample playing.
+
+To goal is to include this tracker into a graphics demo engine (or the
+other way around) for writing realtime graphics demos with realtime
+music/sound generation.
 
 The WLambda scripting language provides means to setup signal flow
 graphs and setting up the wave-sickle synthesizer modules.
 
 The main user is currently my wctr-demo-engine project.
+
+# Status
+
+## 2019-09-07
+
+This is not even really released yet. And not even alpha stage,
+also the [wave-sickle](https://github.com/WeirdConstructor/wave-sickle)
+port is only boiler plate and basic setup code currently.
+
+I am currently very much implementing basic things like the first
+synthesizer port and finally sending note triggers to it.
+
+Just recently I added the audio buffers and audio device thread.
 
 # How to run?
 
