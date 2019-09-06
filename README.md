@@ -1,5 +1,3 @@
-<img align="left" width="60" height="60" src="http://m8geil.de/data/git/wlambda/res/wlambda_logo_60.png">
-
 WDemTracker - A music tracker which uses wave-sickle for sound generation
 =========================================================================
 
@@ -11,6 +9,13 @@ The WLambda scripting language provides means to setup signal flow
 graphs and setting up the wave-sickle synthesizer modules.
 
 The main user is currently my wctr-demo-engine project.
+
+
+# Obligatory Screenshot
+
+<a href="http://m8geil.de/data/git/wdem-tracker/res/wdemtracker_sc_20190907.png">
+<img align="left" width="638" height="527" src="http://m8geil.de/data/git/wdem-tracker/res/wdemtracker_sc_20190907.png">
+</a>
 
 # WLambda Tracker API
 

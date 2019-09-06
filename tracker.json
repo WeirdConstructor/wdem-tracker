@@ -1,0 +1,4794 @@
+[
+  [
+    [
+      "T",
+      []
+    ],
+    [
+      "Sin1",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin2",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin1",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin2",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin3",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin4",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin5",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin6",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin7",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin8",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin9",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin10",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin11",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin12",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin13",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin14",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin15",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin16",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin17",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin18",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin19",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin20",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin21",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin22",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin23",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin24",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin25",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin26",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin27",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin28",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin29",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin30",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin31",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin32",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin33",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin34",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin35",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin36",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin37",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin38",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin39",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin40",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin41",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin42",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin43",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin44",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin45",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin46",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin47",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin48",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin49",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin50",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin51",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin52",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin53",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin54",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin55",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin56",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin57",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin58",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin59",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin60",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin61",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin62",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin63",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin64",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin65",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin66",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin67",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin68",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin69",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin70",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin71",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin72",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin73",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin74",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin75",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin76",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin77",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin78",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin79",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin80",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin81",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin82",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin83",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin84",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin85",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin86",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin87",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin88",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin89",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin90",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin91",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin92",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin93",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin94",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin95",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin96",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin97",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin98",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin99",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sin100",
+      [
+        [
+          "amp",
+          {
+            "Constant": 1.0
+          }
+        ],
+        [
+          "phase",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "vert",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "freq",
+          {
+            "Constant": 9.1
+          }
+        ]
+      ]
+    ],
+    [
+      "Sl1",
+      []
+    ],
+    [
+      "AS1",
+      [
+        [
+          "vol_l",
+          {
+            "RegAddMul": [
+              0,
+              1.0,
+              0.01
+            ]
+          }
+        ],
+        [
+          "vol_r",
+          {
+            "RegAddMul": [
+              0,
+              1.0,
+              0.01
+            ]
+          }
+        ]
+      ]
+    ]
+  ],
+  [
+    {
+      "name": "xxx0",
+      "patterns": [
+        [
+          {
+            "value": [
+              1.0,
+              "Lerp"
+            ],
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": [
+              10.0,
+              "Exp"
+            ],
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": [
+              100.0,
+              "Exp"
+            ],
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          }
+        ],
+        [
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          }
+        ],
+        [
+          {
+            "value": [
+              0.0,
+              "Lerp"
+            ],
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": [
+              100.0,
+              "Exp"
+            ],
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": [
+              0.0,
+              "Step"
+            ],
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          }
+        ]
+      ],
+      "arrangement": [
+        0,
+        2,
+        1,
+        0
+      ]
+    },
+    {
+      "name": "xxx1",
+      "patterns": [
+        [
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          }
+        ],
+        [
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          }
+        ],
+        [
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          }
+        ]
+      ],
+      "arrangement": [
+        0,
+        2,
+        1,
+        0
+      ]
+    },
+    {
+      "name": "xxx2",
+      "patterns": [
+        [
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          }
+        ],
+        [
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          }
+        ],
+        [
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          }
+        ]
+      ],
+      "arrangement": [
+        0,
+        2,
+        1,
+        0
+      ]
+    }
+  ]
+]
