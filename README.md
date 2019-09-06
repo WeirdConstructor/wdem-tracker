@@ -42,6 +42,35 @@ For Help hit *F1*.
 
 # WLambda Tracker API
 
+The whole tracker is configured and signal graph is setup by an WLambda script.
+The script is read from the `tracker.wl` file in the current working directory.
+This is an example of how such a `tracker.wl` script might look like:
+
+    displayln "audio thread setting start!";
+
+    !g_main = audio_call :signal_group "Main";
+    audio_call :track_proxy 5 g_main;
+
+    !g_sub = audio_call :signal_group "Sub";
+    !os  = audio_call :op :sin "Sin1" g_sub;
+    !os2 = audio_call :op :sin "Sin2" g_sub;
+
+    range 1 100 1 {
+        !i = _;
+        audio_call :op :sin [str:cat "Sin" i] g_sub;
+    };
+
+    !g_inst1 = audio_call :signal_group :Inst1;
+    audio_call :op :slaughter "Sl1" g_inst1;
+    audio_call :op :audio_send "AS1" g_inst1;
+
+    !r = $[:addmul, 0, 1.0, 0.01];
+    audio_call :input "AS1" :vol_l r;
+    audio_call :input "AS1" :vol_r r;
+
+    audio_call :thread:quit;
+    displayln "audio thread setting end!";
+
 Aside from the [WLambda Reference](https://docs.rs/wlambda/latest/wlambda/prelude/index.html#wlambda-reference)
 following functions are available:
 
