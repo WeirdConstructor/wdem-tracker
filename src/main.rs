@@ -1066,7 +1066,7 @@ impl WDemTrackerGUI {
     }
 
     pub fn init(&mut self) {
-        for i in 0..3 {
+        for i in 0..6 {
             let lpp = self.tracker.borrow().lpp;
             let mut t = Track::new(&format!("xxx{}", i), lpp);
             t.touch_pattern_idx(1);
