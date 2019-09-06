@@ -10,7 +10,7 @@ pub trait OutputHandler {
     /// Called by Tracker::tick() when a new line started and
     /// a track has a new value defined. Useful for driving note on/off
     /// events on a synthesizer.
-    fn emit_event(&mut self, track_idx: usize, val: f32, flags: u16);
+    fn emit_event(&mut self, track_idx: usize, row: &Row);
     /// Called when the Tracker::tick() function advanced to a new line.
     fn emit_play_line(&mut self, play_line: i32);
     /// Is used to output the song position in seconds.
@@ -242,7 +242,7 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
             for (track_idx, t) in self.tracks.iter_mut().enumerate() {
                 let e = t.play_line(new_play_line);
                 if let Some(row) = e {
-                    output.emit_event(track_idx, row.value.unwrap_or((0.0, Interpolation::Step)).0, row.a as u16);
+                    output.emit_event(track_idx, &row);
                 }
             }
         }

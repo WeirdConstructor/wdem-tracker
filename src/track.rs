@@ -434,7 +434,10 @@ impl Track {
     /// Should be called in order of the track events, othewise 
     /// desync() should be called first.
     pub fn play_line(&mut self, line: usize) -> Option<Row> {
-        self.sync_interpol_to_play_line(line)
+        self.sync_interpol_to_play_line(line);
+
+        let r = self.row(line);
+        if r.note > 0 { Some(r.clone()) } else { None }
     }
 
     /// Returns the interpolated value of this track at the specified line.

@@ -482,10 +482,32 @@ struct Output {
     pos:            i32,
     song_pos_s:     f32,
     cpu:            (f64, f64, f64),
+    track_notes:    Vec<u8>,
+    events:         Vec<(usize, u8, u8)>,
 }
 
 impl OutputHandler for Output {
-    fn emit_event(&mut self, track_idx: usize, val: f32, flags: u16) {
+    fn emit_event(&mut self, track_idx: usize, row: &Row) {
+        if row.note > 0 {
+            if track_idx >= self.track_notes.len() {
+                self.track_notes.resize(track_idx + 1, 0);
+            }
+
+            if row.note > 1 {
+                self.events.push(
+                    (track_idx, row.note, row.note));
+            }
+
+            if self.track_notes[track_idx] > 0 {
+                self.events.push((track_idx, 1, self.track_notes[track_idx]));
+            }
+
+            if row.note == 1 {
+                self.track_notes[track_idx] = 0;
+            } else {
+                self.track_notes[track_idx] = row.note;
+            }
+        }
         //d// println!("EMIT: {}: {}/{}", track_idx, val, flags);
     }
 
@@ -744,7 +766,7 @@ fn start_tracker_thread(
 
         let mut ctx = ctxref.borrow_mut();
 
-        let mut o = Output { pos: 0, song_pos_s: 0.0, cpu: (0.0, 0.0, 0.0) };
+        let mut o = Output { pos: 0, song_pos_s: 0.0, cpu: (0.0, 0.0, 0.0), events: Vec::new(), track_notes: Vec::new() };
         let mut t = Tracker::new(TrackerNopSync { });
 
         let sample_buf_len =
@@ -836,6 +858,25 @@ fn start_tracker_thread(
 
             if out_updated {
                 out_updated = false;
+
+                while !o.events.is_empty() {
+                    let e = o.events.pop().unwrap();
+                    // TODO: Implement proper mapping of track->group, maybe
+                    //       use the A value?!
+                    let ev =
+                        if e.1 == 1 {
+                            signals::Event::NoteOff(e.2)
+                        } else {
+                            signals::Event::NoteOn(e.1)
+                        };
+                    ctx.sim.event(0, &ev);
+                    ctx.sim.event(1, &ev);
+                    ctx.sim.event(2, &ev);
+                    ctx.sim.event(3, &ev);
+                    ctx.sim.event(4, &ev);
+                    ctx.sim.event(5, &ev);
+                    ctx.sim.event(6, &ev);
+                }
 
                 ctx.sim.exec(o.song_pos_s, rr.clone());
 
@@ -1005,8 +1046,7 @@ impl WDemTrackerGUI {
         let mut simcom = SimulatorCommunicator::new();
 
         let sync = ThreadTrackSync::new(sync_tx);
-        let out = std::sync::Arc::new(std::sync::Mutex::new(Output { pos: 0, song_pos_s: 0.0, cpu: (0.0, 0.0, 0.0) }));
-
+        let out = std::sync::Arc::new(std::sync::Mutex::new(Output { pos: 0, song_pos_s: 0.0, cpu: (0.0, 0.0, 0.0), events: Vec::new(), track_notes: Vec::new() }));
 
         let genv = create_wlamba_prelude();
         let mut wl_eval_ctx =
