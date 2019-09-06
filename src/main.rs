@@ -976,6 +976,7 @@ enum InputMode {
     OpInValue(usize, usize),
     FileActions,
     ScrollOps,
+    HelpScreen,
 }
 
 struct WDemTrackerGUI {
@@ -1042,7 +1043,7 @@ impl WDemTrackerGUI {
             num_txt:            String::from(""),
             octave:             4,
             grabbed_mpos:       None,
-            status_line:        String::from(""),
+            status_line:        String::from("(F1 - Help, q - Quit)"),
             op_inp_set:         OperatorInputSettings::new(simcom),
             evctx:              wl_eval_ctx,
             scopes,
@@ -1099,6 +1100,8 @@ impl EventHandler for WDemTrackerGUI {
     fn key_down_event(&mut self, ctx: &mut Context, keycode: KeyCode, _keymods: KeyMods, _repeat: bool) {
         if keycode == KeyCode::Q {
             quit(ctx);
+        } else if keycode == KeyCode::F1 {
+            self.mode = InputMode::HelpScreen;
         }
     }
 
@@ -1159,7 +1162,7 @@ impl EventHandler for WDemTrackerGUI {
 
         match mode {
             InputMode::Normal => {
-                self.set_status_text(String::from(""));
+                self.set_status_text(String::from("(F1 - Help, q - Quit)"));
                 match character {
                     's' => {
                         self.mode = InputMode::Step;
@@ -1465,6 +1468,8 @@ impl EventHandler for WDemTrackerGUI {
                             self.op_inp_set.scroll_offs.0,
                             self.op_inp_set.scroll_offs.1));
             },
+            InputMode::HelpScreen => {
+            },
         }
     }
 
@@ -1489,30 +1494,73 @@ impl EventHandler for WDemTrackerGUI {
             let mut p : GGEZGUIPainter =
                 GGEZGUIPainter { p: self.painter.clone(), c: ctx, offs: (0.0, 0.0), area: (0.0, 0.0) };
 
-            p.set_offs(((sz.0 - 126.0).floor() + 0.5, 0.5));
-            p.draw_text(
-                [1.0, 1.0, 1.0, 1.0],
-                [0.0, 0.0],
-                10.0,
-                format!("CPU {:6.2}/{:6.2}/{:6.2}", cpu.0, cpu.1, cpu.2));
+            match self.mode {
+                InputMode::HelpScreen => {
+                    p.set_offs((10.0, 10.0));
+                    p.draw_rect(
+                        [0.2, 0.2, 0.2, 1.0], [0.0, 0.0],
+                        [sz.0 - 20.0, sz.1 - 20.0], true, 0.0);
+                    p.draw_rect(
+                        [1.0, 1.0, 1.0, 1.0], [0.0, 0.0],
+                        [sz.0 - 20.0, sz.1 - 20.0], false, 2.0);
+                    p.add_offs(5.0, 5.0);
 
-            p.set_offs((0.5, 0.5));
-            p.draw_text([1.0, 0.0, 0.0, 1.0], [0.0, 0.0], 10.0, self.get_status_text());
+                    p.draw_text(
+                        [1.0, 1.0, 1.0, 1.0], [0.0, 0.0],
+                        15.0,
+                        String::from(
+r#"WDem Tracker - Keyboard Reference
+=================================
+(Hit ESC to get back)
 
-            p.set_offs((0.5, 20.5));
-            p.set_area_size((sz.0, sz.1 / 2.0));
-            self.editor.draw(&mut p, play_line);
+[Normal] Mode:
+    h / l           - Move cursor to left/right track.
+    j / k           - Step cursor down/up a row.
+    Shift + j / k   - Move cursor down/up exactly 1 row (regardless of the
+                      step size).
+    s               - Go to `Step` mode for setting the step size.
+    x               - Delete contents of cursor cell.
+    f               - Go to `File` mode, for writing/reading the
+                      current contents of the tracks and input signals.
+    y               - Refresh signal operator from background thread.
+    i               - Go to `Interpolation` mode for setting the interpolation
+                      of the current track.
+    ' ' (space)     - Pause/Unpause the tracker.
+    '#'             - Go to `Note` mode for entering notes by keyboard.
+                      For quickly entering notes hit the Alt key and the
+                      notes on the keyboard according to `Note` mode.
+    'o'             - Go to `ScrollOps` mode for scrolling the displayed
+                      signal groups and operators using the h/j/k/l keys.
+"#
+                        ));
+                },
+                _ => {
+                    p.set_offs(((sz.0 - 126.0).floor() + 0.5, 0.5));
+                    p.draw_text(
+                        [1.0, 1.0, 1.0, 1.0],
+                        [0.0, 0.0],
+                        10.0,
+                        format!("CPU {:6.2}/{:6.2}/{:6.2}", cpu.0, cpu.1, cpu.2));
 
-            let y_below_tracker = 40.5 + (sz.1 / 2.0).floor();
+                    p.set_offs((0.5, 0.5));
+                    p.draw_text([1.0, 0.0, 0.0, 1.0], [0.0, 0.0], 10.0, self.get_status_text());
 
-            p.set_offs((0.5, y_below_tracker));
-            p.set_area_size((sz.0, sz.1 / 4.0));
-            self.scopes.update_from_sample_row();
-            self.scopes.draw_scopes(&mut p);
+                    p.set_offs((0.5, 20.5));
+                    p.set_area_size((sz.0, sz.1 / 2.0));
+                    self.editor.draw(&mut p, play_line);
 
-            p.set_offs((0.5, y_below_tracker + (sz.1 / 4.0).floor()));
-            p.set_area_size((sz.0, sz.1 / 4.0));
-            self.op_inp_set.draw(&mut p);
+                    let y_below_tracker = 40.5 + (sz.1 / 2.0).floor();
+
+                    p.set_offs((0.5, y_below_tracker));
+                    p.set_area_size((sz.0, sz.1 / 4.0));
+                    self.scopes.update_from_sample_row();
+                    self.scopes.draw_scopes(&mut p);
+
+                    p.set_offs((0.5, y_below_tracker + (sz.1 / 4.0).floor()));
+                    p.set_area_size((sz.0, sz.1 / 4.0));
+                    self.op_inp_set.draw(&mut p);
+                }
+            }
 
             p.show();
         }

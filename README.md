@@ -10,6 +10,29 @@ graphs and setting up the wave-sickle synthesizer modules.
 
 The main user is currently my wctr-demo-engine project.
 
+# How to run?
+
+Currently it has not been published to crates.io and you have to clone
+the git repositories yourself, but from that it should be just a call
+to `cargo run --release` to execute it:
+
+    # git clone https://github.com/WeirdConstructor/wlambda.git
+    # git clone https://github.com/WeirdConstructor/wctr-signal-ops.git
+    # git clone https://github.com/WeirdConstructor/wdem-tracker.git
+
+    # cd wdem-tracker
+    # cargo run --release
+
+Then hit F1 for a short command overview.
+
+# Usage
+
+The tracker usage is different from most trackers and it's input interface
+is similar to vi(m) in concept. You have different modes to do different
+things and you always get back to the default `[Normal]` mode by hitting the
+ESC key. *You Quit by hitting the `q` key!*.
+
+For Help hit *F1*.
 
 # Obligatory Screenshot
 
