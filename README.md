@@ -1,6 +1,10 @@
 WDemTracker - A music tracker which uses wave-sickle for sound generation
 =========================================================================
 
+<a href="http://m8geil.de/data/git/wdem-tracker/res/wdemtracker_sc_20190907.png">
+<img align="left" width="638" height="527" src="http://m8geil.de/data/git/wdem-tracker/res/wdemtracker_sc_20190907.png">
+</a>
+
 This is a crate that provides an editor and tracker backend for use in other
 applications. The editor currently uses ggez for graphics and input handling,
 but could be rather easily ported to SDL or other graphics libraries.
@@ -33,12 +37,6 @@ things and you always get back to the default `[Normal]` mode by hitting the
 ESC key. *You Quit by hitting the `q` key!*.
 
 For Help hit *F1*.
-
-# Obligatory Screenshot
-
-<a href="http://m8geil.de/data/git/wdem-tracker/res/wdemtracker_sc_20190907.png">
-<img align="left" width="638" height="527" src="http://m8geil.de/data/git/wdem-tracker/res/wdemtracker_sc_20190907.png">
-</a>
 
 # WLambda Tracker API
 
