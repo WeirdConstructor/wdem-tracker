@@ -1694,6 +1694,9 @@ WDem Tracker - Keyboard Reference
 
 
 fn main() {
+    use wave_sickle::helpers;
+    wave_sickle::helpers::init_cos_tab();
+
     // Make a Context and an EventLoop.
     let (mut ctx, mut event_loop) =
        ContextBuilder::new("wdem_tracker", "Weird Constructor")

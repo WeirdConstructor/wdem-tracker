@@ -2998,13 +2998,70 @@
       "patterns": [
         [
           {
-            "value": [
-              1.0,
-              "Lerp"
-            ],
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 69
+          },
+          {
+            "value": null,
             "a": 0,
             "b": 0,
             "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 69
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 71
           },
           {
             "value": null,
@@ -3040,7 +3097,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 60
           },
           {
             "value": null,
@@ -3064,7 +3121,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 64
           },
           {
             "value": null,
@@ -3076,7 +3133,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 67
           },
           {
             "value": null,
@@ -3088,7 +3145,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 64
           },
           {
             "value": null,
@@ -3100,7 +3157,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 67
           },
           {
             "value": null,
@@ -3112,7 +3169,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 64
           },
           {
             "value": null,
@@ -3124,73 +3181,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": [
-              10.0,
-              "Exp"
-            ],
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": [
-              100.0,
-              "Exp"
-            ],
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
+            "note": 67
           },
           {
             "value": null,
@@ -3204,7 +3195,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 67
           },
           {
             "value": null,
@@ -3395,13 +3386,10 @@
         ],
         [
           {
-            "value": [
-              0.0,
-              "Lerp"
-            ],
+            "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 67
           },
           {
             "value": null,
@@ -3413,31 +3401,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": [
-              100.0,
-              "Exp"
-            ],
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": [
-              0.0,
-              "Step"
-            ],
-            "a": 0,
-            "b": 0,
-            "note": 0
+            "note": 64
           },
           {
             "value": null,
@@ -3449,7 +3413,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 67
           },
           {
             "value": null,
@@ -3461,7 +3425,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 64
           },
           {
             "value": null,
@@ -3473,7 +3437,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 67
           },
           {
             "value": null,
@@ -3485,7 +3449,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 64
           },
           {
             "value": null,
@@ -3497,7 +3461,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 67
           },
           {
             "value": null,
@@ -3509,7 +3473,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 64
           },
           {
             "value": null,
@@ -3521,7 +3485,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 67
           },
           {
             "value": null,
@@ -3533,7 +3497,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 64
           },
           {
             "value": null,
@@ -3545,7 +3509,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 67
           },
           {
             "value": null,
@@ -3557,7 +3521,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 64
           },
           {
             "value": null,
@@ -3569,7 +3533,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 67
           },
           {
             "value": null,
@@ -3581,13 +3545,31 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 64
           },
           {
             "value": null,
             "a": 0,
             "b": 0,
             "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 67
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 64
           },
           {
             "value": null,
@@ -4199,6 +4181,1785 @@
     },
     {
       "name": "xxx2",
+      "patterns": [
+        [
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          }
+        ],
+        [
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          }
+        ],
+        [
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          }
+        ]
+      ],
+      "arrangement": [
+        0,
+        2,
+        1,
+        0
+      ]
+    },
+    {
+      "name": "xxx3",
+      "patterns": [
+        [
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          }
+        ],
+        [
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          }
+        ],
+        [
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          }
+        ]
+      ],
+      "arrangement": [
+        0,
+        2,
+        1,
+        0
+      ]
+    },
+    {
+      "name": "xxx4",
+      "patterns": [
+        [
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          }
+        ],
+        [
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          }
+        ],
+        [
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          }
+        ]
+      ],
+      "arrangement": [
+        0,
+        2,
+        1,
+        0
+      ]
+    },
+    {
+      "name": "xxx5",
       "patterns": [
         [
           {
