@@ -141,10 +141,21 @@ impl<SYNC> Tracker<SYNC> where SYNC: TrackerSync {
     }
 
     pub fn draw<P>(&self, p: &mut P, state: &mut GUIState) where P: GUIPainter {
-        let mut display_track_count = (p.get_area_size().0 / TRACK_WIDTH) as usize;
+        let mut display_track_count = (p.get_area_size().0 / TRACK_WIDTH).floor() as usize;
+        if display_track_count < 1 {
+            display_track_count = 1;
+        }
         let o = p.get_offs();
 
-        for (i, t) in self.tracks.iter().enumerate() {
+        let half_track_count = display_track_count / 2;
+        let skip_cnt =
+            if state.cursor_track_idx > half_track_count {
+                state.cursor_track_idx - half_track_count
+            } else {
+                0
+            };
+
+        for (i, t) in self.tracks.iter().enumerate().skip(skip_cnt) {
             if display_track_count == 0 { break; }
             display_track_count -= 1;
 

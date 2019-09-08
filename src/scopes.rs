@@ -4,7 +4,7 @@ use crate::gui_painter::*;
 pub const SCOPE_SAMPLES : usize = 128;
 pub const SCOPE_WIDTH   : f32   = 128.0;
 pub const SCOPE_HEIGHT  : f32   = 48.0;
-const SCOPE_FONT_HEIGHT : f32 = 13.0;
+const SCOPE_FONT_HEIGHT : f32   = 13.0;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Scope {
