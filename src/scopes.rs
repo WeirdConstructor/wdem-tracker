@@ -2,6 +2,8 @@ use wctr_signal_ops::sample_row::SampleRow;
 use crate::gui_painter::*;
 
 pub const SCOPE_SAMPLES : usize = 128;
+pub const SCOPE_WIDTH   : f32   = 128.0;
+pub const SCOPE_HEIGHT  : f32   = 48.0;
 const SCOPE_FONT_HEIGHT : f32 = 13.0;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -156,8 +158,8 @@ impl Scopes {
     }
 
     pub fn draw_scopes<P>(&mut self, p: &mut P) where P: GUIPainter {
-        let scope_width  = 128.0;
-        let scope_height = 48.0;
+        let scope_width  = SCOPE_WIDTH;
+        let scope_height = SCOPE_HEIGHT;
         let font_height  = SCOPE_FONT_HEIGHT;
         let elem_height  = scope_height + SCOPE_FONT_HEIGHT;
         let per_row      = (p.get_area_size().0 / scope_width).ceil() as usize;
