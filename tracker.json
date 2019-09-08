@@ -2998,79 +2998,28 @@
       "patterns": [
         [
           {
-            "value": null,
+            "value": [
+              0.01,
+              "Lerp"
+            ],
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": [
+              20.0,
+              "Exp"
+            ],
             "a": 0,
             "b": 0,
             "note": 69
           },
           {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 69
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 71
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
+            "value": [
+              10.0,
+              "SStep"
+            ],
             "a": 0,
             "b": 0,
             "note": 0
@@ -3121,86 +3070,6 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 64
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 67
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 64
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 67
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 64
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 67
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          }
-        ],
-        [
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 67
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
             "note": 0
           },
           {
@@ -3246,10 +3115,13 @@
             "note": 0
           },
           {
-            "value": null,
+            "value": [
+              0.0,
+              "Lerp"
+            ],
             "a": 0,
             "b": 0,
-            "note": 0
+            "note": 69
           },
           {
             "value": null,
@@ -3276,61 +3148,10 @@
             "note": 0
           },
           {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": null,
+            "value": [
+              10.0,
+              "Step"
+            ],
             "a": 0,
             "b": 0,
             "note": 0
@@ -3389,7 +3210,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 67
+            "note": 0
           },
           {
             "value": null,
@@ -3401,7 +3222,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 64
+            "note": 0
           },
           {
             "value": null,
@@ -3413,7 +3234,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 67
+            "note": 0
           },
           {
             "value": null,
@@ -3425,7 +3246,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 64
+            "note": 0
           },
           {
             "value": null,
@@ -3437,7 +3258,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 67
+            "note": 0
           },
           {
             "value": null,
@@ -3449,7 +3270,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 64
+            "note": 0
           },
           {
             "value": null,
@@ -3461,7 +3282,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 67
+            "note": 0
           },
           {
             "value": null,
@@ -3473,7 +3294,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 64
+            "note": 0
           },
           {
             "value": null,
@@ -3485,7 +3306,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 67
+            "note": 0
           },
           {
             "value": null,
@@ -3497,7 +3318,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 64
+            "note": 0
           },
           {
             "value": null,
@@ -3509,7 +3330,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 67
+            "note": 0
           },
           {
             "value": null,
@@ -3521,7 +3342,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 64
+            "note": 0
           },
           {
             "value": null,
@@ -3533,7 +3354,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 67
+            "note": 0
           },
           {
             "value": null,
@@ -3545,7 +3366,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 64
+            "note": 0
           },
           {
             "value": null,
@@ -3557,7 +3378,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 67
+            "note": 0
           },
           {
             "value": null,
@@ -3569,7 +3390,201 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 64
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          }
+        ],
+        [
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
           },
           {
             "value": null,

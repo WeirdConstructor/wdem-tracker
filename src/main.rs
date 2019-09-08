@@ -5,11 +5,12 @@ use std::io::prelude::*;
 use wdem_tracker::track::*;
 use wdem_tracker::tracker::*;
 use wdem_tracker::tracker_editor::*;
-use wdem_tracker::scopes::Scopes;
+use wdem_tracker::scopes::{Scopes, SCOPE_SAMPLES};
 use wctr_signal_ops::*;
 use wave_sickle::new_slaughter;
 use wdem_tracker::audio::*;
 use wdem_tracker::vval_opin::*;
+use wdem_tracker::key_shortcut_help::*;
 
 use std::rc::Rc;
 use std::sync::Arc;
@@ -479,11 +480,61 @@ impl OperatorInputSettings {
 }
 
 struct Output {
-    pos:            i32,
-    song_pos_s:     f32,
-    cpu:            (f64, f64, f64),
-    track_notes:    Vec<u8>,
-    events:         Vec<(usize, u8, u8)>,
+    pos:                    i32,
+    song_pos_s:             f32,
+    cpu:                    (f64, f64, f64),
+    audio_scope_samples:    Vec<Vec<f32>>,
+    audio_scope_done:       bool,
+    track_notes:            Vec<u8>,
+    events:                 Vec<(usize, u8, u8)>,
+}
+
+impl Output {
+    pub fn new() -> Self {
+        Output {
+            pos: 0,
+            song_pos_s: 0.0,
+            cpu: (0.0, 0.0, 0.0),
+            events: Vec::new(),
+            track_notes: Vec::new(),
+            audio_scope_samples: Vec::new(),
+            audio_scope_done: false,
+        }
+    }
+
+    pub fn collect_audio_scope_samples(&mut self, sample_rate: usize, bufs: &Vec<Vec<f32>>) {
+        if bufs.len() != self.audio_scope_samples.len() {
+            self.audio_scope_samples.resize(bufs.len(), Vec::new());
+        }
+
+        // 2 times freq samples because of stereo signal!
+        let a4_buf_len = 2 * ((sample_rate as f64 / 440.0).ceil() as usize);
+
+        for (ab, ass) in bufs.iter().zip(self.audio_scope_samples.iter_mut()) {
+            if a4_buf_len != ass.capacity() {
+                ass.reserve(a4_buf_len);
+            }
+
+            let mut ass_len = ass.len();
+
+            if ass_len >= a4_buf_len {
+                self.audio_scope_done = true;
+                return;
+            }
+
+            let rest = a4_buf_len - ass_len;
+            let rest = if ab.len() < rest { ab.len() } else { rest };
+            if rest > 0 {
+                ass.extend_from_slice(&ab[0..rest]);
+                ass_len = ass.len();
+            }
+
+            if ass_len >= a4_buf_len {
+                self.audio_scope_done = true;
+                return;
+            }
+        }
+    }
 }
 
 impl OutputHandler for Output {
@@ -728,7 +779,7 @@ fn start_tracker_thread(
     rcv: std::sync::mpsc::Receiver<TrackerSyncMsg>,
     mut ep: SimulatorCommunicatorEndpoint) -> Scopes {
 
-    let sr = Scopes::new();
+    let sr = Scopes::new(SCOPE_SAMPLES);
     let rr = sr.sample_row.clone();
 
     let mut audio_f = AudioFrontend::new();
@@ -740,12 +791,11 @@ fn start_tracker_thread(
     std::thread::spawn(move || {
         audio_f.wait_backend_ready();
 
-
         let ctxref =
             std::rc::Rc::new(std::cell::RefCell::new(AudioThreadWLambdaContext {
                 sim:          Simulator::new(),
                 track_values: std::rc::Rc::new(std::cell::RefCell::new(vec![])),
-                sample_rate:  44100,
+                sample_rate:  audio_f.get_sample_rate(),
             }));
 
         eval_audio_script(msgh, ctxref.clone());
@@ -766,7 +816,7 @@ fn start_tracker_thread(
 
         let mut ctx = ctxref.borrow_mut();
 
-        let mut o = Output { pos: 0, song_pos_s: 0.0, cpu: (0.0, 0.0, 0.0), events: Vec::new(), track_notes: Vec::new() };
+        let mut o = Output::new();
         let mut t = Tracker::new(TrackerNopSync { });
 
         let sample_buf_len =
@@ -857,8 +907,6 @@ fn start_tracker_thread(
             }
 
             if out_updated {
-                out_updated = false;
-
                 while !o.events.is_empty() {
                     let e = o.events.pop().unwrap();
                     // TODO: Implement proper mapping of track->group, maybe
@@ -879,19 +927,32 @@ fn start_tracker_thread(
                 }
 
                 ctx.sim.exec(o.song_pos_s, rr.clone());
-
-                if let Ok(ref mut m) = ext_out.try_lock() {
-                    m.pos        = o.pos;
-                    m.song_pos_s = o.song_pos_s;
-                    m.cpu        = o.cpu;
-                }
             }
 
             if is_playing {
                 ctx.sim.render(sample_buf_len, 0, &mut audio_buffers);
+                o.collect_audio_scope_samples(
+                    audio_f.get_sample_rate(), &audio_buffers);
+
             } else {
                 ctx.sim.render_silence(sample_buf_len, 0, &mut audio_buffers);
             }
+
+            if out_updated {
+                out_updated = false;
+                if let Ok(ref mut m) = ext_out.try_lock() {
+                    m.pos        = o.pos;
+                    m.song_pos_s = o.song_pos_s;
+                    m.cpu        = o.cpu;
+                    if o.audio_scope_done {
+                        m.audio_scope_done = o.audio_scope_done;
+                        std::mem::swap(
+                            &mut m.audio_scope_samples,
+                            &mut o.audio_scope_samples);
+                    }
+                }
+            }
+
 
 //            std::thread::sleep(
 //                std::time::Duration::from_micros(
@@ -1030,6 +1091,7 @@ struct WDemTrackerGUI {
     mode:               InputMode,
     step:               i32,
     scopes:             Scopes,
+    audio_scopes:       Scopes,
     num_txt:            String,
     octave:             u8,
     status_line:        String,
@@ -1046,7 +1108,7 @@ impl WDemTrackerGUI {
         let mut simcom = SimulatorCommunicator::new();
 
         let sync = ThreadTrackSync::new(sync_tx);
-        let out = std::sync::Arc::new(std::sync::Mutex::new(Output { pos: 0, song_pos_s: 0.0, cpu: (0.0, 0.0, 0.0), events: Vec::new(), track_notes: Vec::new() }));
+        let out = std::sync::Arc::new(std::sync::Mutex::new(Output::new()));
 
         let genv = create_wlamba_prelude();
         let mut wl_eval_ctx =
@@ -1061,6 +1123,8 @@ impl WDemTrackerGUI {
                 out.clone(),
                 sync_rx,
                 simcom.get_endpoint());
+
+        let audio_scopes = Scopes::new(0);
 
         snd.register_on_as(&mut wl_eval_ctx, "audio");
 
@@ -1087,6 +1151,7 @@ impl WDemTrackerGUI {
             op_inp_set:         OperatorInputSettings::new(simcom),
             evctx:              wl_eval_ctx,
             scopes,
+            audio_scopes,
             painter: Rc::new(RefCell::new(GGEZPainter {
                 text_cache: std::collections::HashMap::new(),
                 reg_view_font: font,
@@ -1550,8 +1615,25 @@ impl EventHandler for WDemTrackerGUI {
             use wdem_tracker::gui_painter::GUIPainter;
 
             graphics::clear(ctx, graphics::BLACK);
-            let play_line = self.tracker_thread_out.lock().unwrap().pos;
-            let cpu       = self.tracker_thread_out.lock().unwrap().cpu;
+            let mut play_line = 0;
+            let mut cpu       = (0.0, 0.0, 0.0);
+
+            if let Ok(mut out) = self.tracker_thread_out.lock() {
+                play_line = out.pos;
+                cpu       = out.cpu;
+                if out.audio_scope_done {
+                    self.audio_scopes.update_from_audio_bufs(
+                        &out.audio_scope_samples);
+
+                    for ass in out.audio_scope_samples.iter_mut() {
+                        ass.clear();
+                    }
+                    out.audio_scope_done = false;
+                }
+
+            }
+
+
             self.force_redraw = false;
             let mut p : GGEZGUIPainter =
                 GGEZGUIPainter { p: self.painter.clone(), c: ctx, offs: (0.0, 0.0), area: (0.0, 0.0) };
@@ -1571,84 +1653,7 @@ impl EventHandler for WDemTrackerGUI {
                         [1.0, 1.0, 1.0, 1.0], [0.0, 0.0],
                         15.0,
                         format!("[page {}/3] (navigation: Space/Backspace or PageUp/PageDown)\n", page + 1) +
-                        &match page {
-1 => String::from(r#"
-[Step] Mode:
-
-    When entering the mode the step is reset to 1, from that
-    you can change it with these keys:
-
-    0               - Multiply by 10
-    1 - 9           - Add a value (1 to 9).
-    any other key   - Go back to [Normal] mode.
-
-[File] Mode:
-    w               - Write contents of trackers and input values of
-                      signal ops to `tracker.json` file.
-    r               - Read contents of trackers and input values from
-                      `tracker.json` again.
-
-[Interpolation] Mode:
-    s               - Step (no interpolation)
-    l               - Linear interpolation
-    e               - Exponential interpolation
-    t               - Smoothstep interpolation
-"#),
-2 => String::from(r#"
-[Note] Mode:
-
-    Remember: In [Normal] mode you can always press the Alt key
-    and a key from the [Note] mode to enter a note on the fly.
-
-    + / -           - Go an octave up/down
-    yxcvbnm         - Octave+0 White keys from C to B
-    sdghj           - Octave+0 Black keys from C# to A#
-
-    qwertzu         - Octave+1 White keys from C to B
-    23567           - Octave+1 Black keys from C# to A#
-
-    iop             - Octave+2 White keys from C to E
-    90              - Octave+2 Black keys from C# to D#
-
-[ScrollOps] Mode:
-    h / j / k / l   - Scroll the signal groups / operators
-
-[A] / [B] Mode:
-    0-9 / A-F / a-f - Enter 2 hex digits
-"#),
-_ => String::from(
-r#"
-WDem Tracker - Keyboard Reference
-=================================
-- Hit ESC to get back.
-- Space/PageDown for next page.
-- Backspace/PageUp for previous page.
-
-[Normal] Mode:
-    h / l           - Move cursor to left/right track.
-    j / k           - Step cursor down/up a row.
-    Shift + j / k   - Move cursor down/up exactly 1 row (regardless of the
-                      step size).
-    s               - Go to `Step` mode for setting the step size.
-    x               - Delete contents of cursor cell.
-    f               - Go to `File` mode, for writing/reading the
-                      current contents of the tracks and input signals.
-    y               - Refresh signal operator from background thread.
-    i               - Go to `Interpolation` mode for setting the interpolation
-                      of the current track.
-    ' ' (space)     - Pause/Unpause the tracker.
-    '#'             - Go to `Note` mode for entering notes by keyboard.
-                      For quickly entering notes hit the Alt key and the
-                      notes on the keyboard according to `Note` mode.
-    'o'             - Go to `ScrollOps` mode for scrolling the displayed
-                      signal groups and operators using the h/j/k/l keys.
-    n / m           - Stop the tracker and move the play cursor up/down a row.
-    a               - Go to `A` mode for entering the A 8-bit hex value.
-    b               - Go to `B` mode for entering the B 8-bit hex value.
-    - / . / 0-9     - For entering a value, just start typing the value
-                      and hit Return or some other key.
-"#),
-                        }
+                        &get_shortcut_help_page(page),
                     ) // p.draw_text
                 },
                 _ => {
@@ -1669,9 +1674,13 @@ WDem Tracker - Keyboard Reference
                     let y_below_tracker = 40.5 + (sz.1 / 2.0).floor();
 
                     p.set_offs((0.5, y_below_tracker));
-                    p.set_area_size((sz.0, sz.1 / 4.0));
+                    p.set_area_size((sz.0 / 2.0, sz.1 / 4.0));
                     self.scopes.update_from_sample_row();
                     self.scopes.draw_scopes(&mut p);
+
+                    p.set_offs(((sz.0 / 2.0) + 0.5, y_below_tracker));
+                    p.set_area_size((sz.0 / 2.0, sz.1 / 4.0));
+                    self.audio_scopes.draw_scopes(&mut p);
 
                     p.set_offs((0.5, y_below_tracker + (sz.1 / 4.0).floor()));
                     p.set_area_size((sz.0, sz.1 / 4.0));

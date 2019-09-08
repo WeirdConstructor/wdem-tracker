@@ -16,7 +16,7 @@ range 1 100 1 {
 audio_call :op :slaughter "Sl1" g_inst1;
 audio_call :op :audio_send "AS1" g_inst1;
 
-!r = $[:addmul, 0, 1.0, 0.01];
+!r = $[:addmul, 0, 1.0, 0.1];
 audio_call :input "AS1" :vol_l r;
 audio_call :input "AS1" :vol_r r;
 

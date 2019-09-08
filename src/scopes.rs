@@ -14,11 +14,11 @@ pub struct Scope {
 }
 
 impl Scope {
-    fn new(sample_len: usize) -> Self {
+    fn new(sample_count: usize) -> Self {
         let mut v = Vec::new();
-        v.resize(sample_len, 0.0);
+        v.resize(sample_count, 0.0);
         let mut p = Vec::new();
-        p.resize(sample_len, [0.0; 2]);
+        p.resize(sample_count, [0.0; 2]);
         Scope {
             samples:      v,
             points:       p,
@@ -62,36 +62,62 @@ impl Scope {
             &[[size[0], 0.0],[size[0], size[1]]],
             false,
             0.5);
-        painter.draw_lines(
-            [1.0, 1.0, 1.0, 1.0],
-            pos,
-            &self.points,
-            false,
-            0.5);
+        if !self.points.is_empty() {
+            painter.draw_lines(
+                [1.0, 1.0, 1.0, 1.0],
+                pos,
+                &self.points,
+                false,
+                0.5);
+        }
         painter.draw_text(
             [1.0, 0.0, 1.0, 1.0],
             [pos[0], pos[1] + size[1]],
             SCOPE_FONT_HEIGHT,
             format!("r{} {:0.2}", idx, self.recent_value));
-
     }
 }
 
 pub struct Scopes {
+    pub sample_count: usize,
     pub scopes:     Vec<Scope>,
     pub sample_row: std::sync::Arc<std::sync::Mutex<SampleRow>>,
         my_sample_row: SampleRow,
 }
 
 impl Scopes {
-    pub fn new() -> Self {
+    pub fn new(sample_count: usize) -> Self {
         use std::sync::Arc;
         use std::sync::Mutex;
 
         Scopes {
+            sample_count,
             scopes: Vec::new(),
             sample_row: Arc::new(Mutex::new(SampleRow::new())),
             my_sample_row: SampleRow::new(),
+        }
+    }
+
+    pub fn update_from_audio_bufs(&mut self, bufs: &Vec<Vec<f32>>) {
+        if bufs.len() != self.scopes.len() {
+            self.scopes.resize(
+                bufs.len() * 2,
+                Scope::new(self.sample_count));
+        }
+
+        for (i, ab) in bufs.iter().enumerate() {
+            for channel in 0..2 {
+                let s : &mut Scope = &mut self.scopes[(i * 2) + channel];
+                if s.samples.len() != ab.len() {
+                    self.sample_count = ab.len();
+                    s.samples.resize(ab.len() / 2, 0.0);
+                    s.points.resize(ab.len() / 2, [0.0; 2]);
+                }
+
+                for (j, s) in s.samples.iter_mut().enumerate() {
+                    *s = ab[(j * 2) + channel];
+                }
+            }
         }
     }
 
@@ -114,7 +140,7 @@ impl Scopes {
 
         let pos = self.my_sample_row.pos;
         if self.scopes.len() < len {
-            self.scopes.resize(len, Scope::new(SCOPE_SAMPLES));
+            self.scopes.resize(len, Scope::new(self.sample_count));
         }
 
         for (i, s) in self.my_sample_row.sample_row.iter().enumerate() {
@@ -123,7 +149,7 @@ impl Scopes {
 
             let mut j = old_pos;
             while j != pos {
-                j = (j + 1) % SCOPE_SAMPLES;
+                j = (j + 1) % self.sample_count;
                 self.scopes[i].samples[j]   = *s;
             }
         }
@@ -136,6 +162,16 @@ impl Scopes {
         let elem_height  = scope_height + SCOPE_FONT_HEIGHT;
         let per_row      = (p.get_area_size().0 / scope_width).ceil() as usize;
         let max_rows     = (p.get_area_size().1 / elem_height).ceil() as usize;
+
+        if per_row <= 0 { return; }
+
+        let s = p.get_area_size();
+
+        p.draw_rect(
+            [0.3, 0.1, 0.1, 1.0],
+            [0.0, 0.0],
+            [s.0, s.1],
+            true, 1.0);
 
         for (i, s) in self.scopes.iter_mut().enumerate() {
             let row_idx = i % per_row;

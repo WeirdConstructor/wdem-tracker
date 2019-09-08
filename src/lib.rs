@@ -6,3 +6,4 @@ pub mod scopes;
 pub mod vval_opin;
 pub mod color_opin;
 pub mod audio;
+pub mod key_shortcut_help;
