@@ -2964,7 +2964,38 @@
     ],
     [
       "Sl1",
-      []
+      [
+        [
+          "o1_wav",
+          {
+            "Constant": -0.39000005
+          }
+        ],
+        [
+          "o1_pw",
+          {
+            "Constant": 0.5
+          }
+        ],
+        [
+          "o1_detc",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "o1_detf",
+          {
+            "Constant": 0.0
+          }
+        ],
+        [
+          "o1_vol",
+          {
+            "Constant": 1.0
+          }
+        ]
+      ]
     ],
     [
       "AS1",
@@ -2975,7 +3006,7 @@
             "RegAddMul": [
               0,
               1.0,
-              0.01
+              0.1
             ]
           }
         ],
@@ -2985,7 +3016,7 @@
             "RegAddMul": [
               0,
               1.0,
-              0.01
+              0.1
             ]
           }
         ]
@@ -2998,33 +3029,6 @@
       "patterns": [
         [
           {
-            "value": [
-              0.01,
-              "Lerp"
-            ],
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
-            "value": [
-              20.0,
-              "Exp"
-            ],
-            "a": 0,
-            "b": 0,
-            "note": 69
-          },
-          {
-            "value": [
-              10.0,
-              "SStep"
-            ],
-            "a": 0,
-            "b": 0,
-            "note": 0
-          },
-          {
             "value": null,
             "a": 0,
             "b": 0,
@@ -3046,7 +3050,7 @@
             "value": null,
             "a": 0,
             "b": 0,
-            "note": 60
+            "note": 0
           },
           {
             "value": null,
@@ -3115,13 +3119,28 @@
             "note": 0
           },
           {
-            "value": [
-              0.0,
-              "Lerp"
-            ],
+            "value": null,
             "a": 0,
             "b": 0,
-            "note": 69
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
+          },
+          {
+            "value": null,
+            "a": 0,
+            "b": 0,
+            "note": 0
           },
           {
             "value": null,
@@ -3148,10 +3167,7 @@
             "note": 0
           },
           {
-            "value": [
-              10.0,
-              "Step"
-            ],
+            "value": null,
             "a": 0,
             "b": 0,
             "note": 0

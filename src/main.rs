@@ -173,7 +173,7 @@ pub struct OperatorInputSettings {
 
 fn draw_op<P>(p: &mut P, op: &(OpIOSpec, OpInfo), highlight: &Option<(usize, usize)>, selection: &Option<(usize, usize)>) -> (f32, f32, Vec<([f32; 4], usize, usize)>)
         where P: wdem_tracker::gui_painter::GUIPainter {
-    let inp_col_w : f32 = 142.0;
+    let inp_col_w : f32 = 180.0;
     let inp_col_wr: f32 =  70.0;
     let padding   : f32 =   2.0;
     let text_h    : f32 =  12.0;
@@ -207,7 +207,7 @@ fn draw_op<P>(p: &mut P, op: &(OpIOSpec, OpInfo), highlight: &Option<(usize, usi
     for (idx, (i, is)) in op.0.input_values.iter().zip(op.0.inputs.iter()).enumerate() {
         let text = match i {
             OpIn::Constant(v) => {
-                format!("{:>8.2}", *v)
+                format!("{:>8.3}", *v)
             },
             OpIn::Reg(u) =>
                 format!("r{}", *u),
