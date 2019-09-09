@@ -1,4 +1,5 @@
 pub mod gui_painter;
+pub mod ggez_gui_painter;
 pub mod tracker;
 pub mod track;
 pub mod tracker_editor;
@@ -7,3 +8,6 @@ pub mod vval_opin;
 pub mod color_opin;
 pub mod audio;
 pub mod key_shortcut_help;
+pub mod audio_dev_thread;
+pub mod operator_gui;
+pub mod tracker_thread;
