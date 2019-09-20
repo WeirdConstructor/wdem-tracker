@@ -104,9 +104,7 @@ fn calc_cpu_percentage(millis: u128, interval_ms: u128) -> f64 {
 }
 
 use wlambda;
-use wlambda::vval::VVal;
-use wlambda::prelude::create_wlamba_prelude;
-use wlambda::vval::{Env};
+use wlambda::{VVal, GlobalEnv, EvalContext, Env};
 
 struct AudioThreadWLambdaContext {
     pub sim: Simulator,
@@ -115,7 +113,7 @@ struct AudioThreadWLambdaContext {
 }
 
 fn eval_audio_script(mut msgh: wlambda::threads::MsgHandle, ctxref: std::rc::Rc<std::cell::RefCell<AudioThreadWLambdaContext>>) {
-    let genv = create_wlamba_prelude();
+    let genv = GlobalEnv::new_default();
 
     genv.borrow_mut().add_func(
         "p", |env: &mut Env, _argc: usize| {

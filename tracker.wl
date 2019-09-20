@@ -1,4 +1,4 @@
-displayln "audio thread setting start!";
+std:displayln "audio thread setting start!";
 
 !g_main = audio_call :signal_group "Main";
 audio_call :track_proxy 5 g_main;
@@ -9,7 +9,7 @@ audio_call :track_proxy 5 g_main;
 
 range 1 100 1 {
     !i = _;
-    audio_call :op :sin [str:cat "Sin" i] g_sub;
+    audio_call :op :sin (std:str:cat "Sin" i) g_sub;
 };
 
 !g_inst1 = audio_call :signal_group :Inst1;
@@ -21,4 +21,4 @@ audio_call :input "AS1" :vol_l r;
 audio_call :input "AS1" :vol_r r;
 
 audio_call :thread:quit;
-displayln "audio thread setting end!";
+std:displayln "audio thread setting end!";

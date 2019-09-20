@@ -14,9 +14,7 @@ use wdem_tracker::operator_gui::*;
 use wdem_tracker::tracker_thread::*;
 
 use wlambda;
-use wlambda::vval::VVal;
-use wlambda::prelude::create_wlamba_prelude;
-use wlambda::vval::{Env};
+use wlambda::{VVal, GlobalEnv, EvalContext, Env};
 
 use std::rc::Rc;
 use std::sync::Arc;
@@ -103,7 +101,7 @@ impl WDemTrackerGUI {
         let sync = ThreadTrackSync::new(sync_tx);
         let out = std::sync::Arc::new(std::sync::Mutex::new(TrackerThreadOutput::new()));
 
-        let genv = create_wlamba_prelude();
+        let genv = GlobalEnv::new_default();
         let mut wl_eval_ctx =
             wlambda::compiler::EvalContext::new(genv);
 
