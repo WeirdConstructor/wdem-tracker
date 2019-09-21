@@ -197,7 +197,8 @@ impl OperatorInputSettings {
         }
 
         if self.selection.is_some() && button_is_down {
-            let ampli = -(yr as f32 / 100.0);
+            let exp = (10.0 as f64).powf((xr / 200.0).abs() as f64);
+            let ampli = -((yr as f64 * exp) / 200.0) as f32;
             let s = self.selection.unwrap();
             self.set_input_val(s.0, s.1, self.orig_val + ampli);
             return true;
