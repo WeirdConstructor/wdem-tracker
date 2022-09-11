@@ -1,6 +1,6 @@
-<span style="font-size: 200%">Please note, this project has been deprecated and
-won't be continued. It has been superseded by
-[HexoSynth - A modular synthesizer in Rust](https://github.com/WeirdConstructor/HexoSynth)</span>
+# Please note, this project has been deprecated and won't be continued. It has been superseded by [HexoSynth - A modular synthesizer in Rust](https://github.com/WeirdConstructor/HexoSynth)</span>
+
+------
 
 WDemTracker - A music tracker which uses wave-sickle for sound generation
 =========================================================================
